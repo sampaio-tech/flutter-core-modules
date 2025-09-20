@@ -1,8 +1,6 @@
 library flutter_core_modules;
 
 export './src/core/data/repositories/cache_repository.dart';
-export './src/core/domain/errors/device_discover_failure.dart';
-export './src/core/domain/errors/http_failure.dart';
 export './src/core/domain/repositories/cache_repository.dart';
 export './src/core/domain/usecases/get_bool_usecase.dart';
 export './src/core/domain/usecases/remove_cache_usecase.dart';
@@ -24,7 +22,6 @@ export './src/core/presentation/setup/shared_preferences/provider.dart';
 export './src/core/presentation/slivers/multi_sliver.dart';
 export './src/core/presentation/slivers/rendering/multi_sliver.dart';
 export './src/core/presentation/utils/safe_area_utils.dart';
-export './src/core/presentation/widgets/back_button_widget.dart';
 export './src/core/presentation/widgets/error_indicator_widget.dart';
 export './src/core/presentation/widgets/label_cupertino_child_picker_widget.dart';
 export './src/core/presentation/widgets/label_row_widget.dart';

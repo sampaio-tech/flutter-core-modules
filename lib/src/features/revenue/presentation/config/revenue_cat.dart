@@ -13,28 +13,24 @@ Future<void> initPlatformState() async {
   final revenueCatProjectAppleApiKey = DotEnv.getRevenueCatProjectAppleApiKey();
   final revenueCatProjectGoogleApiKey =
       DotEnv.getRevenueCatProjectGoogleApiKey();
-  await Purchases.setLogLevel(
-    switch (kDebugMode) {
-      true => LogLevel.error,
-      false => LogLevel.info,
-    },
-  );
+  await Purchases.setLogLevel(switch (kDebugMode) {
+    true => LogLevel.error,
+    false => LogLevel.info,
+  });
   final configuration = switch ((
     Platform.isAndroid,
     revenueCatProjectGoogleApiKey,
     Platform.isIOS,
     revenueCatProjectAppleApiKey,
   )) {
-    (true, final String revenueCatProjectGoogleApiKey, _, _) =>
-      PurchasesConfiguration(
-        revenueCatProjectGoogleApiKey,
-      )
+    (true, final String revenueCatProjectGoogleApiKey, _, _)
+        when revenueCatProjectGoogleApiKey.isNotEmpty =>
+      PurchasesConfiguration(revenueCatProjectGoogleApiKey)
         ..appUserID = null
         ..purchasesAreCompletedBy = const PurchasesAreCompletedByRevenueCat(),
-    (_, _, true, final String revenueCatProjectAppleApiKey) =>
-      PurchasesConfiguration(
-        revenueCatProjectAppleApiKey,
-      )
+    (_, _, true, final String revenueCatProjectAppleApiKey)
+        when revenueCatProjectAppleApiKey.isNotEmpty =>
+      PurchasesConfiguration(revenueCatProjectAppleApiKey)
         ..appUserID = null
         ..purchasesAreCompletedBy = const PurchasesAreCompletedByRevenueCat(),
     _ => null,
