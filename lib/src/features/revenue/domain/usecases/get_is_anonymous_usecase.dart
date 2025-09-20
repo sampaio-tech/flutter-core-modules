@@ -6,16 +6,15 @@ import '../repositories/revenue_repository.dart';
 class GetIsAnonymousUsecase {
   final RevenueRepository _repository;
 
-  const GetIsAnonymousUsecase({
-    required RevenueRepository repository,
-  }) : _repository = repository;
+  const GetIsAnonymousUsecase({required RevenueRepository repository})
+    : _repository = repository;
 
-  Future<bool> call() => _repository.getIsAnonymous();
+  Future<bool?> call() => _repository.getIsAnonymous();
 }
 
 final getIsAnonymousUsecaseProvider =
     Provider.autoDispose<GetIsAnonymousUsecase>(
-  (ref) => GetIsAnonymousUsecase(
-    repository: ref.read(revenueRepositoryProvider),
-  ),
-);
+      (ref) => GetIsAnonymousUsecase(
+        repository: ref.read(revenueRepositoryProvider),
+      ),
+    );

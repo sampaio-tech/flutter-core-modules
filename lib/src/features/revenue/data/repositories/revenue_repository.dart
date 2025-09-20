@@ -13,24 +13,45 @@ class RevenueRepositoryImpl extends RevenueRepository {
   @override
   Future<void> addCustomerInfoUpdateListener(
     void Function(CustomerInfo) listener,
-  ) async =>
-      Purchases.addCustomerInfoUpdateListener(listener);
+  ) async {
+    if (!await Purchases.isConfigured) {
+      return;
+    }
+    return Purchases.addCustomerInfoUpdateListener(listener);
+  }
 
   @override
   Future<void> removeCustomerInfoUpdateListener(
     void Function(CustomerInfo) listener,
-  ) async =>
-      Purchases.removeCustomerInfoUpdateListener(listener);
+  ) async {
+    if (!await Purchases.isConfigured) {
+      return;
+    }
+    return Purchases.removeCustomerInfoUpdateListener(listener);
+  }
 
   @override
-  Future<String> getAppUserID() => Purchases.appUserID;
+  Future<String?> getAppUserID() async {
+    if (!await Purchases.isConfigured) {
+      return null;
+    }
+    return Purchases.appUserID;
+  }
 
   @override
-  Future<bool> getIsAnonymous() => Purchases.isAnonymous;
+  Future<bool?> getIsAnonymous() async {
+    if (!await Purchases.isConfigured) {
+      return null;
+    }
+    return Purchases.isAnonymous;
+  }
 
   @override
   Future<CustomerInfo?> getCustomerInfo() async {
     try {
+      if (!await Purchases.isConfigured) {
+        return null;
+      }
       return Purchases.getCustomerInfo();
     } catch (err) {
       return null;
@@ -38,9 +59,18 @@ class RevenueRepositoryImpl extends RevenueRepository {
   }
 
   @override
-  Future<void> syncPurchases() => Purchases.syncPurchases();
+  Future<void> syncPurchases() async {
+    if (!await Purchases.isConfigured) {
+      return null;
+    }
+    return Purchases.syncPurchases();
+  }
 
   @override
-  Future<void> invalidateCustomerInfoCache() =>
-      Purchases.invalidateCustomerInfoCache();
+  Future<void> invalidateCustomerInfoCache() async {
+    if (!await Purchases.isConfigured) {
+      return null;
+    }
+    return Purchases.invalidateCustomerInfoCache();
+  }
 }

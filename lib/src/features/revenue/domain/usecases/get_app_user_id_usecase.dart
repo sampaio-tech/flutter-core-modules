@@ -6,15 +6,12 @@ import '../repositories/revenue_repository.dart';
 class GetAppUserIdUsecase {
   final RevenueRepository _repository;
 
-  const GetAppUserIdUsecase({
-    required RevenueRepository repository,
-  }) : _repository = repository;
+  const GetAppUserIdUsecase({required RevenueRepository repository})
+    : _repository = repository;
 
-  Future<String> call() => _repository.getAppUserID();
+  Future<String?> call() => _repository.getAppUserID();
 }
 
 final getAppUserIdUsecaseProvider = Provider.autoDispose<GetAppUserIdUsecase>(
-  (ref) => GetAppUserIdUsecase(
-    repository: ref.read(revenueRepositoryProvider),
-  ),
+  (ref) => GetAppUserIdUsecase(repository: ref.read(revenueRepositoryProvider)),
 );

@@ -11,9 +11,9 @@ abstract class RevenueRepository {
     void Function(CustomerInfo) listener,
   );
 
-  Future<String> getAppUserID();
+  Future<String?> getAppUserID();
 
-  Future<bool> getIsAnonymous();
+  Future<bool?> getIsAnonymous();
 
   Future<CustomerInfo?> getCustomerInfo();
 

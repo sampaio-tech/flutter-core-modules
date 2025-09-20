@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:purchases_ui_flutter/paywall_result.dart';
 
 import '../../../analytics/domain/entities/events/event_entity.dart';
@@ -17,6 +18,9 @@ Future<PaywallResult?> presentPaywallForwarded({
   void Function(PaywallResult)? onSyncPurchasesCallback,
   void Function(PaywallResult)? onPresentPaywallResultCallback,
 }) async {
+  if (!await Purchases.isConfigured) {
+    return null;
+  }
   final providerContainer = ProviderScope.containerOf(context);
   if (!enable) {
     onTap?.call();
