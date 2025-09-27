@@ -1,6 +1,9 @@
 library flutter_core_modules;
 
+export './src/core/data/data_sources/shared_preferences_cache_local_data_source.dart';
 export './src/core/data/repositories/cache_repository.dart';
+export './src/core/domain/data_sources/cache_local_data_source.dart';
+export './src/core/domain/entities/cache_key.dart';
 export './src/core/domain/repositories/cache_repository.dart';
 export './src/core/domain/usecases/get_bool_usecase.dart';
 export './src/core/domain/usecases/remove_cache_usecase.dart';
@@ -73,9 +76,20 @@ export './src/features/settings/presentation/notifiers/wakelock_state_notifier.d
 export './src/features/settings/presentation/widgets/cache_bool_row_widget.dart';
 export './src/features/settings/presentation/widgets/switch_row_widget.dart';
 export './src/features/settings/presentation/widgets/theme_row_widget.dart';
+export './src/features/storage/data/data_sources/firebase_storage_remote_data_source.dart';
+export './src/features/storage/data/repositories/firebase_storage_repository.dart';
+export './src/features/storage/domain/data_sources/storage_remote_data_source.dart';
+export './src/features/storage/domain/repositories/storage_repository.dart';
+export './src/features/storage/domain/usecases/get_download_url_usecase.dart';
+export './src/features/storage/domain/usecases/get_json_usecase.dart';
+export './src/features/storage/presentation/notifiers/get_download_url_state_notifier.dart';
+export './src/features/storage/presentation/notifiers/get_json_state_notifier.dart';
+export './src/features/storage/presentation/widgets/image_network_from_storage_widget.dart';
+export './src/features/storage/presentation/widgets/svg_from_storage_widget.dart';
 export './src/features/theme/data/repositories/theme_repository.dart';
 export './src/features/theme/domain/repositories/theme_repository.dart';
 export './src/features/theme/domain/usecases/get_theme_data_usecase.dart';
 export './src/features/theme/domain/usecases/remove_theme_data_usecase.dart';
 export './src/features/theme/domain/usecases/set_theme_data_usecase.dart';
 export './src/features/theme/presentation/notifiers/theme_state_notifier.dart';
+export 'src/core/domain/failures/storage_failure.dart';
