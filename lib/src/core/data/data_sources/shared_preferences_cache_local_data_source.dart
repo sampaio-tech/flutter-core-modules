@@ -19,7 +19,7 @@ class SharedPreferencesCacheLocalDataSource extends CacheLocalDataSource {
   @override
   Future<dynamic> getJson({required String path}) async =>
       switch (_sharedPreferences.getString(
-        const JsonCacheKey().savedAt(path),
+        const JsonCacheKey().keyByPath(path),
       )) {
         null => null,
         final json => jsonDecode(json),
@@ -30,7 +30,7 @@ class SharedPreferencesCacheLocalDataSource extends CacheLocalDataSource {
     required CacheKey key,
     required String path,
   }) async => switch (_sharedPreferences.getString(
-    const JsonCacheKey().keyByPath(path),
+    const JsonCacheKey().savedAt(path),
   )) {
     null => null,
     final formattedString => DateTime.tryParse(formattedString),
