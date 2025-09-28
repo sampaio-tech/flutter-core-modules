@@ -9,6 +9,7 @@ export './src/core/domain/usecases/get_bool_usecase.dart';
 export './src/core/domain/usecases/remove_cache_usecase.dart';
 export './src/core/domain/usecases/set_bool_usecase.dart';
 export './src/core/domain/utils/either.dart';
+export './src/core/domain/utils/fowarded_cache_functions.dart';
 export './src/core/presentation/hooks/debounce.dart';
 export './src/core/presentation/hooks/fixed_extent_scroll_controller.dart';
 export './src/core/presentation/hooks/interval.dart';
