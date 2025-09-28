@@ -13,6 +13,12 @@ final httpClientProvider = Provider<Client>((ref) {
   return HttpClient(httpClient: httpClient);
 });
 
+final firebaseStorageClientProvider = Provider<Client>((ref) {
+  final httpClient = Client();
+  ref.onDispose(httpClient.close);
+  return FirebaseStorageClient(httpClient: httpClient);
+});
+
 class HttpClient extends BaseClient {
   final Client httpClient;
 
@@ -37,6 +43,17 @@ class DefaultClient extends BaseClient {
   @override
   Future<StreamedResponse> send(BaseRequest request) async {
     request.headers.addAll({'Content-Type': 'application/json'});
+    return httpClient.send(request);
+  }
+}
+
+class FirebaseStorageClient extends BaseClient {
+  final Client httpClient;
+
+  FirebaseStorageClient({required this.httpClient});
+
+  @override
+  Future<StreamedResponse> send(BaseRequest request) async {
     return httpClient.send(request);
   }
 }

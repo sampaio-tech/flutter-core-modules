@@ -63,7 +63,7 @@ class FirebaseStorageRemoteDataSource extends StorageRemoteDataSource {
 final firebaseStorageRemoteDataSourceProvider =
     Provider.autoDispose<FirebaseStorageRemoteDataSource>(
       (ref) => FirebaseStorageRemoteDataSource(
-        httpClient: ref.read(defaultHttpClientProvider),
+        httpClient: ref.read(firebaseStorageClientProvider),
         firebaseStorage: ref.read(firebaseStorageProvider),
       ),
     );
