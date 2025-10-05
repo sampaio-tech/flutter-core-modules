@@ -8,6 +8,7 @@ export './src/core/domain/repositories/cache_repository.dart';
 export './src/core/domain/usecases/get_bool_usecase.dart';
 export './src/core/domain/usecases/remove_cache_usecase.dart';
 export './src/core/domain/usecases/set_bool_usecase.dart';
+export './src/core/domain/utils/decimal_text_input_formatter.dart';
 export './src/core/domain/utils/either.dart';
 export './src/core/domain/utils/fowarded_cache_functions.dart';
 export './src/core/presentation/hooks/debounce.dart';
