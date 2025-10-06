@@ -28,7 +28,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
   /// Callback when value is changed.
   /// You can use this to listen to value changes.
   /// e.g. onChange: (value) => print(value);
-  final Function(String)? onChange;
+  final void Function(String)? onChange;
 
   int _decimalDigits = 0;
   bool _containsDecimalSeparator = false;
