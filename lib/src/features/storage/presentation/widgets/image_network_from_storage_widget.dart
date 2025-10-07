@@ -19,6 +19,8 @@ class ImageNetworkFromStorageWidget extends HookConsumerWidget {
   final bool enableImageCache;
   final Widget? progressIndicatorWidget;
   final Widget? errorWidget;
+  final Duration fadeDuration;
+  final Duration animationDuration;
 
   const ImageNetworkFromStorageWidget({
     required this.path,
@@ -33,6 +35,8 @@ class ImageNetworkFromStorageWidget extends HookConsumerWidget {
     this.enableImageCache = true,
     this.progressIndicatorWidget,
     this.errorWidget,
+    this.fadeDuration = const Duration(milliseconds: 300),
+    this.animationDuration = Duration.zero,
   });
 
   factory ImageNetworkFromStorageWidget.fromPath({
@@ -47,6 +51,8 @@ class ImageNetworkFromStorageWidget extends HookConsumerWidget {
     bool enableImageCache = true,
     Widget? progressIndicatorWidget,
     Widget? errorWidget,
+    Duration fadeDuration = const Duration(milliseconds: 300),
+    Duration animationDuration = Duration.zero,
   }) => ImageNetworkFromStorageWidget(
     path: path,
     fit: fit,
@@ -59,6 +65,8 @@ class ImageNetworkFromStorageWidget extends HookConsumerWidget {
     enableImageCache: enableImageCache,
     progressIndicatorWidget: progressIndicatorWidget,
     errorWidget: errorWidget,
+    fadeDuration: fadeDuration,
+    animationDuration: animationDuration,
   );
 
   @override
@@ -84,36 +92,48 @@ class ImageNetworkFromStorageWidget extends HookConsumerWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: switch (state) {
-        LoadFailureState() => errorWidget,
-        LoadSuccessState(value: final String src) => switch (enableImageCache) {
-          true => CachedNetworkImage(
-            imageUrl: src,
-            width: width,
-            height: height,
-            fit: fit,
-            alignment: alignment,
-            color: color,
-            progressIndicatorBuilder: (context, url, progress) =>
-                progressIndicatorWidget ?? const SizedBox.shrink(),
-            errorWidget: (context, url, error) =>
-                errorWidget ?? const SizedBox.shrink(),
-          ),
-          false => Image.network(
-            src,
-            width: width,
-            height: height,
-            fit: fit,
-            alignment: alignment,
-            color: color,
-            errorBuilder: (context, url, error) =>
-                errorWidget ?? const SizedBox.shrink(),
-            loadingBuilder: (context, url, progress) =>
-                progressIndicatorWidget ?? const SizedBox.shrink(),
-          ),
+      child: AnimatedSwitcher(
+        duration: animationDuration,
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
+        child: switch (state) {
+          LoadFailureState() => errorWidget,
+          LoadSuccessState(value: final String src) =>
+            switch (enableImageCache) {
+              true => CachedNetworkImage(
+                fadeInDuration: animationDuration <= Duration.zero
+                    ? fadeDuration
+                    : Duration.zero,
+                fadeOutDuration: animationDuration <= Duration.zero
+                    ? fadeDuration
+                    : Duration.zero,
+                imageUrl: src,
+                width: width,
+                height: height,
+                fit: fit,
+                alignment: alignment,
+                color: color,
+                progressIndicatorBuilder: (context, url, progress) =>
+                    progressIndicatorWidget ?? const SizedBox.shrink(),
+                errorWidget: (context, url, error) =>
+                    errorWidget ?? const SizedBox.shrink(),
+              ),
+              false => Image.network(
+                src,
+                width: width,
+                height: height,
+                fit: fit,
+                alignment: alignment,
+                color: color,
+                errorBuilder: (context, url, error) =>
+                    errorWidget ?? const SizedBox.shrink(),
+                loadingBuilder: (context, url, progress) =>
+                    progressIndicatorWidget ?? const SizedBox.shrink(),
+              ),
+            },
+          _ => progressIndicatorWidget,
         },
-        _ => progressIndicatorWidget,
-      },
+      ),
     );
   }
 }

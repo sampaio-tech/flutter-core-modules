@@ -20,6 +20,8 @@ class SvgFromStorageWidget extends HookConsumerWidget {
   final bool enableSvgCache;
   final Widget? progressIndicatorWidget;
   final Widget? errorWidget;
+  final Duration fadeDuration;
+  final Duration animationDuration;
 
   const SvgFromStorageWidget({
     required this.path,
@@ -34,6 +36,8 @@ class SvgFromStorageWidget extends HookConsumerWidget {
     this.enableSvgCache = true,
     this.progressIndicatorWidget,
     this.errorWidget,
+    this.fadeDuration = const Duration(milliseconds: 300),
+    this.animationDuration = Duration.zero,
   });
 
   factory SvgFromStorageWidget.fromStoragePath({
@@ -48,6 +52,8 @@ class SvgFromStorageWidget extends HookConsumerWidget {
     bool enableSvgCache = true,
     Widget? progressIndicatorWidget,
     Widget? errorWidget,
+    Duration fadeDuration = const Duration(milliseconds: 300),
+    Duration animationDuration = Duration.zero,
   }) => SvgFromStorageWidget(
     path: path,
     fit: fit,
@@ -60,6 +66,8 @@ class SvgFromStorageWidget extends HookConsumerWidget {
     invalidateCacheDuration: invalidateCacheDuration,
     progressIndicatorWidget: progressIndicatorWidget,
     errorWidget: errorWidget,
+    fadeDuration: fadeDuration,
+    animationDuration: animationDuration,
   );
 
   @override
@@ -85,40 +93,48 @@ class SvgFromStorageWidget extends HookConsumerWidget {
     return SizedBox(
       width: width,
       height: height,
-      child: switch (state) {
-        LoadFailureState() => errorWidget,
-        LoadSuccessState(value: final String src) => switch (enableSvgCache) {
-          true => CachedNetworkSVGImage(
-            src,
-            width: width,
-            height: height,
-            fit: fit,
-            alignment: alignment,
-            colorFilter: switch (color) {
-              null => null,
-              final color => ColorFilter.mode(color, BlendMode.srcIn),
-            },
-            errorWidget: errorWidget,
-            placeholder: progressIndicatorWidget,
-          ),
-          false => SvgPicture.network(
-            src,
-            width: width,
-            height: height,
-            fit: fit,
-            alignment: alignment,
-            colorFilter: switch (color) {
-              null => null,
-              final color => ColorFilter.mode(color, BlendMode.srcIn),
-            },
-            errorBuilder: (context, error, stackTrace) =>
-                errorWidget ?? const SizedBox.shrink(),
-            placeholderBuilder: (context) =>
-                progressIndicatorWidget ?? const SizedBox.shrink(),
-          ),
+      child: AnimatedSwitcher(
+        duration: animationDuration,
+        transitionBuilder: (child, animation) =>
+            FadeTransition(opacity: animation, child: child),
+        child: switch (state) {
+          LoadFailureState() => errorWidget,
+          LoadSuccessState(value: final String src) => switch (enableSvgCache) {
+            true => CachedNetworkSVGImage(
+              fadeDuration: animationDuration <= Duration.zero
+                  ? fadeDuration
+                  : Duration.zero,
+              src,
+              width: width,
+              height: height,
+              fit: fit,
+              alignment: alignment,
+              colorFilter: switch (color) {
+                null => null,
+                final color => ColorFilter.mode(color, BlendMode.srcIn),
+              },
+              errorWidget: errorWidget,
+              placeholder: progressIndicatorWidget,
+            ),
+            false => SvgPicture.network(
+              src,
+              width: width,
+              height: height,
+              fit: fit,
+              alignment: alignment,
+              colorFilter: switch (color) {
+                null => null,
+                final color => ColorFilter.mode(color, BlendMode.srcIn),
+              },
+              errorBuilder: (context, error, stackTrace) =>
+                  errorWidget ?? const SizedBox.shrink(),
+              placeholderBuilder: (context) =>
+                  progressIndicatorWidget ?? const SizedBox.shrink(),
+            ),
+          },
+          _ => progressIndicatorWidget,
         },
-        _ => progressIndicatorWidget,
-      },
+      ),
     );
   }
 }
