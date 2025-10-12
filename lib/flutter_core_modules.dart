@@ -73,6 +73,8 @@ export './src/features/review/presentation/config/launch_url.dart';
 export './src/features/review/presentation/notifiers/in_app_review_state_notifier.dart';
 export './src/features/review/presentation/notifiers/launch_feedback_state_notifier.dart';
 export './src/features/review/presentation/providers/in_app_review.dart';
+export './src/features/route/presentation/utils/navigation_observers.dart';
+export './src/features/route/presentation/widgets/shell_route_widget.dart';
 export './src/features/settings/presentation/notifiers/haptic_feedback_state_notifier.dart';
 export './src/features/settings/presentation/notifiers/wakelock_state_notifier.dart';
 export './src/features/settings/presentation/widgets/cache_bool_row_widget.dart';
