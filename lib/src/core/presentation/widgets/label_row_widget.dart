@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -658,11 +659,14 @@ class ImageIconWidget extends StatelessWidget {
   final Size size;
   final BorderRadius borderRadius;
   final bool displayBorder;
+  final Duration fadeDuration;
+
   const ImageIconWidget({
     required this.imageUrl,
     this.displayBorder = true,
     this.size = const Size.square(36),
     this.borderRadius = const BorderRadius.all(Radius.circular(7)),
+    this.fadeDuration = const Duration(milliseconds: 300),
     super.key,
   });
 
@@ -694,7 +698,14 @@ class ImageIconWidget extends StatelessWidget {
           child: Stack(
             children: [
               Positioned.fill(child: Container(color: const Color(0xFFE5E5E5))),
-              Positioned.fill(child: Image.network(imageUrl)),
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  fadeInDuration: fadeDuration,
+                  fadeOutDuration: fadeDuration,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ],
           ),
         ),
