@@ -9,6 +9,9 @@ import '../../../features/analytics/domain/entities/events/tap_on_events.dart';
 import '../../../features/settings/presentation/notifiers/haptic_feedback_state_notifier.dart';
 import 'web_view_modal_sheet_widget.dart';
 
+BoxConstraints defaultTitleBoxConstraints(BuildContext context) =>
+    BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.6);
+
 class LabelRowWidget extends HookConsumerWidget {
   final Widget? leftWidget;
   final bool displayDivider;
@@ -20,7 +23,6 @@ class LabelRowWidget extends HookConsumerWidget {
     required String? description,
     required String title,
     required String? toastMessage,
-
     required BuildContext context,
   })?
   onPressed;
@@ -29,7 +31,6 @@ class LabelRowWidget extends HookConsumerWidget {
     required String? description,
     required String title,
     required String? toastMessage,
-
     required BuildContext context,
   })?
   onLongPress;
@@ -42,6 +43,8 @@ class LabelRowWidget extends HookConsumerWidget {
     required String title,
     required Color? Function(IosThemeData theme)? colorBuilder,
     required bool displayCupertinoActivityIndicator,
+    required BoxConstraints Function(BuildContext context)?
+    boxConstraintsBuilder,
   })
   titleBuilder;
   final Widget Function({
@@ -398,6 +401,10 @@ class LabelRowWidget extends HookConsumerWidget {
           false => titleColorBuilder,
         },
         displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
+        boxConstraintsBuilder: switch (label) {
+          null => null,
+          _ => defaultTitleBoxConstraints,
+        },
       ),
       displayDivider: displayDivider,
       onPressed: switch (onPressed) {
@@ -428,18 +435,20 @@ class TitleRegularWidget extends StatelessWidget {
   final String title;
   final bool displayCupertinoActivityIndicator;
   final Color? Function(IosThemeData theme)? colorBuilder;
+  final BoxConstraints Function(BuildContext context)? boxConstraintsBuilder;
 
   const TitleRegularWidget({
     required this.title,
     required this.displayCupertinoActivityIndicator,
     required this.colorBuilder,
+    required this.boxConstraintsBuilder,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = IosTheme.of(context);
-    return Text(
+    final text = Text(
       title,
       style: theme.typography.subheadlineRegular.copyWith(
         color: switch (displayCupertinoActivityIndicator) {
@@ -456,6 +465,13 @@ class TitleRegularWidget extends StatelessWidget {
       textAlign: TextAlign.start,
       overflow: TextOverflow.visible,
     );
+    return switch (boxConstraintsBuilder) {
+      null => text,
+      final boxConstraintsBuilder => ConstrainedBox(
+        constraints: boxConstraintsBuilder(context),
+        child: text,
+      ),
+    };
   }
 }
 
@@ -463,18 +479,20 @@ class TitleBoldWidget extends StatelessWidget {
   final String title;
   final bool displayCupertinoActivityIndicator;
   final Color? Function(IosThemeData theme)? colorBuilder;
+  final BoxConstraints Function(BuildContext context)? boxConstraintsBuilder;
 
   const TitleBoldWidget({
     required this.title,
     required this.displayCupertinoActivityIndicator,
     required this.colorBuilder,
+    required this.boxConstraintsBuilder,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = IosTheme.of(context);
-    return Text(
+    final text = Text(
       title,
       style: theme.typography.subheadlineBold.copyWith(
         color: switch (displayCupertinoActivityIndicator) {
@@ -491,6 +509,13 @@ class TitleBoldWidget extends StatelessWidget {
       textAlign: TextAlign.start,
       overflow: TextOverflow.visible,
     );
+    return switch (boxConstraintsBuilder) {
+      null => text,
+      final boxConstraintsBuilder => ConstrainedBox(
+        constraints: boxConstraintsBuilder(context),
+        child: text,
+      ),
+    };
   }
 }
 
@@ -703,6 +728,8 @@ class ImageIconWidget extends StatelessWidget {
                   imageUrl: imageUrl,
                   fadeInDuration: fadeDuration,
                   fadeOutDuration: fadeDuration,
+                  width: size.width,
+                  height: size.height,
                   fit: BoxFit.cover,
                 ),
               ),
