@@ -78,6 +78,75 @@ class LabelRowWidget extends HookConsumerWidget {
     this.leftWidget,
   });
 
+  LabelRowWidget copyWith({
+    Widget? leftWidget,
+    bool? displayDivider,
+    bool? displayChevronRight,
+    bool? displayCupertinoActivityIndicator,
+    Color? Function(IosThemeData)? titleColorBuilder,
+    void Function({
+      required String? label,
+      required String? description,
+      required String title,
+      required String? toastMessage,
+      required BuildContext context,
+    })?
+    onPressed,
+    void Function({
+      required String? label,
+      required String? description,
+      required String title,
+      required String? toastMessage,
+      required BuildContext context,
+    })?
+    onLongPress,
+    String? title,
+    String? description,
+    String? label,
+    String? toastMessage,
+    Widget Function({
+      required String title,
+      required Color? Function(IosThemeData theme)? colorBuilder,
+      required bool displayCupertinoActivityIndicator,
+      required BoxConstraints Function(BuildContext context)?
+      boxConstraintsBuilder,
+    })?
+    titleBuilder,
+    Widget Function({
+      required String description,
+      required Color? Function(IosThemeData theme)? colorBuilder,
+      required bool displayCupertinoActivityIndicator,
+    })?
+    descriptionBuilder,
+    Widget Function({
+      required String? label,
+      required bool displayChevronRight,
+      required bool displayCupertinoActivityIndicator,
+    })?
+    labelBuilder,
+    Key? key,
+  }) {
+    return LabelRowWidget(
+      leftWidget: leftWidget ?? this.leftWidget,
+      displayDivider: displayDivider ?? this.displayDivider,
+      displayChevronRight: displayChevronRight ?? this.displayChevronRight,
+      displayCupertinoActivityIndicator:
+          displayCupertinoActivityIndicator ??
+          this.displayCupertinoActivityIndicator,
+      titleColorBuilder: titleColorBuilder ?? this.titleColorBuilder,
+      onPressed: onPressed ?? this.onPressed,
+      onLongPress: onLongPress ?? this.onLongPress,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      label: label ?? this.label,
+      toastMessage: toastMessage ?? this.toastMessage,
+      titleBuilder: titleBuilder ?? this.titleBuilder,
+      descriptionBuilder: descriptionBuilder ?? this.descriptionBuilder,
+      labelBuilder: labelBuilder ?? this.labelBuilder,
+      key: key ?? this.key,
+    );
+  }
+
   factory LabelRowWidget.link({
     required bool displayDivider,
     required String title,
