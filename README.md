@@ -2,7 +2,7 @@
 
 A production-ready Flutter package that bundles reusable, clean-architecture modules for common app concerns — analytics, caching, locale, in-app purchases, app review, routing, settings, Firebase Storage, and theming.
 
-Each module follows a strict **data → domain → presentation** layer separation and exposes a Riverpod-first API surface.
+Each module follows a strict **domain → data → presentation** layer separation and exposes a Riverpod-first API surface.
 
 ---
 
@@ -12,6 +12,7 @@ Each module follows a strict **data → domain → presentation** layer separati
 - [Architecture](#architecture)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [App initialization](#app-initialization)
 - [Modules](#modules)
   - [Core](#core)
   - [Analytics](#analytics)
@@ -22,7 +23,10 @@ Each module follows a strict **data → domain → presentation** layer separati
   - [Settings](#settings)
   - [Storage (Firebase)](#storage-firebase)
   - [Theme](#theme)
-- [Development](#development)
+- [Naming conventions](#naming-conventions)
+- [AI tooling](#ai-tooling)
+  - [Claude Code skills](#claude-code-skills)
+  - [Cursor rules](#cursor-rules)
   - [Dart MCP server](#dart-mcp-server)
   - [Ralph orchestrator](#ralph-orchestrator)
 - [Contributing](#contributing)
@@ -31,17 +35,17 @@ Each module follows a strict **data → domain → presentation** layer separati
 
 ## Features
 
-| Module    | What it provides |
-|-----------|-----------------|
-| **Core**      | Cache (SharedPreferences), HTTP overrides, Either monad, safe hooks & notifiers, UI widgets |
-| **Analytics** | Unified tracking across Firebase Analytics, Mixpanel, Amplitude, PostHog, Statsig, Remote Config |
-| **Locale**    | Persist & restore app locale via cache |
-| **Revenue**   | RevenueCat customer-info management (purchases, entitlements, anonymous ID) |
-| **Review**    | In-app review prompts and App Store listing launcher |
-| **Route**     | `ShellRouteWidget` + navigation observers for go_router |
-| **Settings**  | Haptic feedback toggle, wakelock toggle, theme row, cached bool row |
-| **Storage**   | Firebase Storage file URLs and JSON fetching with cached image / SVG widgets |
-| **Theme**     | Persist & restore `ThemeMode` via cache |
+| Module | What it provides |
+|---|---|
+| **Core** | `Either<L,R>` monad, `State<F,S>` sealed lifecycle, `SafeStateNotifier`, `GetStateNotifier`, `CacheBoolStateNotifier`, SharedPreferences singleton, HTTP clients, hooks (`useSafeEffect`, `useDebounce`), shared widgets |
+| **Analytics** | Unified event tracking across Firebase Analytics, Mixpanel, Amplitude, PostHog, and Statsig — all gated by Remote Config flags |
+| **Locale** | Persist and restore the user's chosen `Locale` via SharedPreferences |
+| **Revenue** | RevenueCat customer-info management, `isPremiumCustomerProvider`, paywall presentation with analytics |
+| **Review** | Native in-app review dialog, App Store listing launcher, feedback email via `url_launcher` |
+| **Route** | `ShellRouteWidget` (iOS tab shell) + `NavigationTab` + `defaultNavigatorObservers` for analytics |
+| **Settings** | Haptic feedback toggle, wakelock toggle, `SwitchRowWidget`, `CacheBoolRowWidget`, `ThemeRowWidget` |
+| **Storage** | Firebase Storage URL and JSON fetching with transparent SharedPreferences caching, `ImageNetworkFromStorageWidget`, `SvgFromStorageWidget` |
+| **Theme** | Persist and restore `IosThemeData` (light / dark) via SharedPreferences, `ThemeStateNotifier`, `ThemeRowWidget` |
 
 ---
 
@@ -49,37 +53,57 @@ Each module follows a strict **data → domain → presentation** layer separati
 
 ```
 lib/src/
-├── core/
-│   ├── data/          # Concrete implementations (SharedPreferences, HTTP)
-│   ├── domain/        # Entities, repository contracts, use-cases, utils
-│   └── presentation/  # Hooks, notifiers, widgets, Riverpod providers
+├── core/                     # Shared infrastructure
+│   ├── domain/               # Either, State, failures, cache entities, use cases
+│   ├── data/                 # SharedPreferences, HTTP client implementations
+│   └── presentation/         # SafeStateNotifier, GetStateNotifier, hooks, widgets, setup providers
 └── features/
     └── <feature>/
-        ├── data/
-        ├── domain/
-        └── presentation/
+        ├── domain/           # Abstract repository, use cases, entities, failures
+        ├── data/             # Concrete repository, data sources
+        └── presentation/     # StateNotifier + provider, widgets, config
 ```
 
 Every feature exposes:
-- An **abstract repository** (domain layer) — the contract.
-- A **concrete repository** (data layer) — the implementation.
-- **Use-cases** that wrap repository calls with `Either<Failure, T>` result types.
-- **Riverpod notifiers** that call use-cases and expose typed state.
+- An **abstract repository** (domain layer) — the contract
+- A **concrete repository** (data layer) — the implementation
+- **Use cases** that call the repository and return `Either<Failure, T>`
+- **Riverpod notifiers** that call use cases and expose `State<F, S>` or custom typed state
+
+### State lifecycle
+
+```dart
+sealed class State<F, S> {}
+class StartedState<F, S>      extends State<F, S> {} // before first fetch
+class LoadInProgressState<F, S> extends State<F, S> {} // fetching
+class LoadSuccessState<F, S>  extends State<F, S> { final S value; }
+class LoadFailureState<F, S>  extends State<F, S> { final F failure; }
+```
+
+### Either
+
+```dart
+Either<Failure, String> result = Right('hello');
+result.fold(
+  (failure) => print(failure),
+  (value)   => print(value),
+);
+```
 
 ---
 
 ## Requirements
 
 | Dependency | Minimum version |
-|-----------|----------------|
-| Dart SDK  | `>=3.10.0 <4.0.0` |
-| Flutter   | `>=3.38.3` |
+|---|---|
+| Dart SDK | `>=3.10.0 <4.0.0` |
+| Flutter | `>=3.38.3` |
 
 ---
 
 ## Installation
 
-Add the package as a `path` or Git dependency in your app's `pubspec.yaml`:
+Add as a Git dependency in your app's `pubspec.yaml`:
 
 ```yaml
 dependencies:
@@ -103,94 +127,197 @@ import 'package:flutter_core_modules/flutter_core_modules.dart';
 
 ---
 
+## App initialization
+
+`main()` must execute steps in this exact order:
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Firebase Core (required for Remote Config, Analytics, Storage, Crashlytics)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 2. Firebase Remote Config (gates analytics provider initialization)
+  final remoteConfig = await FirebaseRemoteConfigCore.init();
+
+  // 3. SharedPreferences singleton (required before any provider reads it)
+  await SharedPreferencesInstance.getInstanceSharedPreferences();
+
+  // 4. DotEnv.init() — loads .env, initialises all analytics SDKs and RevenueCat
+  await DotEnv.init(remoteConfig);
+
+  // 5. App entry with ProviderScope
+  runApp(ProviderScope(child: MyApp()));
+}
+```
+
+### Required `.env` file
+
+```env
+# Analytics (all optional — omit to disable that provider)
+STATSIG_CLIENT_SDK_KEY=client-...
+MIXPANEL_TOKEN=...
+POSTHOG_TOKEN=phc_...
+AMPLITUDE_TOKEN=...
+CLARITY_PROJECT_ID=...
+
+# Revenue (required if using the revenue module)
+REVENUECAT_PROJECT_APPLE_API_KEY=appl_...
+REVENUECAT_PROJECT_GOOGLE_API_KEY=goog_...
+```
+
+---
+
 ## Modules
 
 ### Core
 
-#### Cache
-
-```dart
-// Provide SharedPreferences
-final prefs = await SharedPreferences.getInstance();
-final container = ProviderContainer(overrides: [
-  sharedPreferencesProvider.overrideWithValue(prefs),
-]);
-
-// Use a cached bool notifier
-final notifier = container.read(
-  cacheBoolStateNotifierProvider(CacheKey.myKey).notifier,
-);
-await notifier.setValue(true);
-```
-
-#### Either
-
-```dart
-Either<Failure, String> result = Right('hello');
-result.fold(
-  (failure) => print(failure),
-  (value)   => print(value),
-);
-```
-
 #### Hooks
 
 ```dart
-// Debounce a text field search
+// Run an effect after the first frame (avoids setState-during-build):
+useSafeEffect(() {
+  ref.read(myProvider.notifier).get();
+  return () {};  // optional cleanup
+}, []);
+
+// Debounce a search query:
 useDebounce(() => search(query), [query], duration: const Duration(milliseconds: 300));
 
-// Safe effect — skips the first run
-useSafeEffect(() { /* runs only on subsequent rebuilds */ }, [dep]);
+// Repeating timer:
+useInterval(() => refresh(), const Duration(seconds: 30));
+```
+
+#### Notifier base classes
+
+| Class | Extends | Use for |
+|---|---|---|
+| `SafeStateNotifier<T>` | `StateNotifier<T>` | Any notifier — guards `state =` after dispose |
+| `GetStateNotifier<F, E>` | `SafeStateNotifier<State<F,E>>` | Async fetch with `lazyGet()` / `get()` / `forwardedGet()` |
+| `CacheBoolStateNotifier` | `SafeStateNotifier<bool>` | Boolean setting persisted to SharedPreferences |
+
+#### Shared widgets
+
+```dart
+// Info row (copies value on tap):
+LabelRowWidget(displayDivider: true, title: 'Version', label: '1.0.0', toastMessage: 'Copied!')
+
+// Link row (opens WebView):
+LabelRowWidget.link(displayDivider: false, title: 'Privacy Policy', description: 'https://example.com/privacy')
+
+// Action button row:
+LabelRowWidget.button(displayDivider: true, title: 'Rate App', displayChevronRight: true, onPressed: ...)
+
+// Destructive action row:
+LabelRowWidget.redButton(displayDivider: false, title: 'Delete Account', onPressed: ...)
+
+// Error state:
+ErrorIndicatorWidget(retryCallback: () => ref.read(myProvider.notifier).get(), label: 'Something went wrong')
 ```
 
 ---
 
 ### Analytics
 
-The `TrackEventUsecase` fans out a single `EventEntity` to every configured provider.
+`EventEntity` fans out to every configured provider (Firebase Analytics, Mixpanel, Amplitude, PostHog, Statsig). All providers are gated by `.env` tokens **and** Firebase Remote Config flags — disable any provider at runtime without a release.
+
+#### Defining events
 
 ```dart
-// 1. Initialise providers at app start
-await AmplitudeSetup.init(apiKey: env.amplitudeKey);
-await MixpanelSetup.init(token: env.mixpanelToken);
-await PosthogSetup.init(apiKey: env.posthogKey, host: env.posthogHost);
+// Tap event:
+class TapOnSubscribeButton extends EventEntity {
+  const TapOnSubscribeButton();
 
-// 2. Track events anywhere
-final track = ref.read(trackEventUsecaseProvider);
-await track(TapOnEvents.button(name: 'subscribe_cta'));
+  @override
+  Map<String, Object>? get properties => const {};
+}
+
+// Event with properties:
+class TapOnSelectPlan extends EventEntity {
+  final String planId;
+  final double price;
+
+  const TapOnSelectPlan({required this.planId, required this.price});
+
+  @override
+  Map<String, Object>? get properties => {
+    'plan_id': planId,
+    'price': price,
+  };
+}
 ```
 
-Built-in event types extend `EventEntity`. Add your own by extending the base class.
+Event name is derived automatically: `TapOnSelectPlan` → `'tap_on_select_plan'`. Never override `name`.
+
+#### Tracking events
+
+```dart
+// From any widget:
+TapOnSubscribeButton().track(context: context);
+
+// With properties:
+TapOnSelectPlan(planId: 'pro_monthly', price: 9.99).track(context: context);
+```
+
+Analytics is silently disabled in debug mode (`kDebugMode`). Events are logged to the console instead.
 
 ---
 
 ### Locale
 
 ```dart
-// Persist locale
-final setLocale = ref.read(setLocaleUsecaseProvider);
-await setLocale(const Locale('pt', 'BR'));
+// Read persisted locale on app start (sync, null = system locale):
+final savedLocale = ref.read(getLocaleUsecaseProvider)();
 
-// Restore on startup
-final getLocale = ref.read(getLocaleUsecaseProvider);
-final locale = await getLocale();
+// Wire into CupertinoApp:
+CupertinoApp(
+  locale: savedLocale,
+  supportedLocales: const [Locale('en'), Locale('pt', 'BR')],
+  localizationsDelegates: const [...],
+)
+
+// Persist a locale change:
+await ref.read(setLocaleUsecaseProvider)(locale: const Locale('pt', 'BR'));
+
+// Reset to system locale:
+await ref.read(removeLocaleUsecaseProvider)();
 ```
+
+> There is no built-in reactive `StateNotifier` for locale. For live locale switching, wrap the use cases in a `SafeStateNotifier<Locale?>` in the consuming app (follow the `ThemeStateNotifier` pattern).
 
 ---
 
 ### Revenue (RevenueCat)
 
-```dart
-// Configure at app start
-await RevenueCatConfig.init(apiKey: env.revenueCatKey);
+RevenueCat is initialised by `DotEnv.init()` — no additional setup required.
 
-// Read current customer info
-final customerInfo = ref.watch(customerInfoStateNotifierProvider);
-customerInfo.when(
-  data: (info) => Text(info.activeSubscriptions.toString()),
-  loading: () => const CircularProgressIndicator(),
-  error: (e, _) => Text('Error: $e'),
+```dart
+// On root widget mount — fetch and listen for real-time subscription changes:
+useSafeEffect(() {
+  final notifier = ref.read(customerInfoStateNotifierProvider.notifier);
+  notifier.get().then((_) => notifier.listen());
+  return () {};
+}, []);
+
+// Check premium status reactively (single source of truth):
+final isPremium = ref.watch(isPremiumCustomerProvider);
+
+// Gate a feature behind a paywall:
+await presentPaywallForwarded(
+  context: context,
+  event: TapOnGetPremiumButton(),
+  enable: true,
+  featureLocked: true,
+  onTap: () {
+    // Called if user already has access or after a successful purchase
+    Navigator.of(context).push(...);
+  },
 );
+
+// Access raw subscription data:
+final customerInfo = ref.watch(customerInfoStateNotifierProvider);
+final activeSubscriptions = customerInfo?.activeSubscriptions ?? {};
 ```
 
 ---
@@ -198,21 +325,38 @@ customerInfo.when(
 ### Review
 
 ```dart
-// Check availability and request review
-final isAvailable = await ref.read(isAvailableUsecaseProvider)();
-if (isAvailable) {
-  await ref.read(requestReviewUsecaseProvider)();
-}
+// Check availability on mount, then show button conditionally:
+useSafeEffect(() {
+  ref.read(inAppReviewStateNotifierProvider.notifier).isAvailable();
+  return () {};
+}, []);
 
-// Open the store listing directly
-await ref.read(openStoreListingUsecaseProvider)();
+final canReview = ref.watch(inAppReviewStateNotifierProvider);
+
+// Request in-app review with analytics:
+await ref.read(inAppReviewStateNotifierProvider.notifier).requestReview(
+  requestReviewCallback: () => TapOnReviewButton().track(context: context),
+);
+
+// Open App Store listing directly:
+await ref.read(inAppReviewStateNotifierProvider.notifier).openStoreListing();
+
+// Send feedback email (address from Remote Config `feedback_email` key):
+await ref.read(launchFeedbackStateNotifierProvider.notifier).launch(
+  appName: 'My App',
+);
 ```
 
 ---
 
 ### Route
 
-The routing module is built on top of Flutter's native `CupertinoTabScaffold` — no third-party router required. Each tab is described by a `NavigationTab` subclass. `ShellRouteWidget` wires everything together and handles Android system-back correctly (pops within the tab before popping the host route).
+The routing module uses Flutter's native `CupertinoTabScaffold` — no third-party router required. Each tab is a `NavigationTab` subclass; `ShellRouteWidget` wires everything together.
+
+Built-in behaviours:
+- Tapping the active tab **pops to root** (`popUntil((r) => r.isFirst)`)
+- **System back** pops within the tab before propagating up
+- Per-tab **isolated navigator** with a stable `GlobalKey` managed by Riverpod
 
 **1. Define your tabs**
 
@@ -221,11 +365,11 @@ class HomeTab extends NavigationTab {
   const HomeTab() : super(
     name: 'home',
     icon: CupertinoIcons.house_fill,
-    initialTab: true,
+    initialTab: true,   // exactly one tab should be true
   );
 
   @override
-  String label(BuildContext context) => 'Home';
+  String label(BuildContext context) => AppLocalizations.of(context)!.home;
 
   @override
   Map<String, WidgetBuilder>? get routes => {
@@ -235,62 +379,82 @@ class HomeTab extends NavigationTab {
 
   @override
   List<NavigatorObserver> navigatorObservers(BuildContext context) =>
-      defaultNavigatorObservers(context); // Firebase Analytics + PostHog
+      defaultNavigatorObservers(context); // Firebase Analytics + PostHog auto-tracking
 }
 
-class ProfileTab extends NavigationTab {
-  const ProfileTab() : super(
-    name: 'profile',
-    icon: CupertinoIcons.person_fill,
-  );
+class SettingsTab extends NavigationTab {
+  const SettingsTab() : super(name: 'settings', icon: CupertinoIcons.settings);
 
   @override
-  String label(BuildContext context) => 'Profile';
+  String label(BuildContext context) => 'Settings';
 
   @override
   Map<String, WidgetBuilder>? get routes => {
-    '/': (_) => const ProfileScreen(),
+    '/': (_) => const SettingsScreen(),
   };
 }
 ```
 
-**2. Render with `ShellRouteWidget`**
+**2. Render the shell**
 
 ```dart
 ShellRouteWidget(
-  tabs: const [HomeTab(), ProfileTab()],
-  activeColor: CupertinoColors.systemBlue,
+  tabs: const [HomeTab(), SettingsTab()],
+  activeColor: CupertinoColors.activeBlue, // optional
 )
-```
-
-`ShellRouteWidget` renders a `CupertinoTabScaffold` where each tab has its own `CupertinoTabView` and an isolated `NavigatorKey` (provided via Riverpod). Tapping an already-active tab pops the stack back to the root route.
-
-**3. Navigation observers**
-
-`defaultNavigatorObservers` automatically attaches `FirebaseAnalyticsObserver` and `PosthogObserver` when the respective integrations are enabled in your `.env`:
-
-```dart
-// Enabled automatically when DotEnv.enableAnalytics == true
-List<NavigatorObserver> navigatorObservers(BuildContext context) =>
-    defaultNavigatorObservers(context);
 ```
 
 ---
 
 ### Settings
 
-Drop-in settings rows for common toggles:
-
 ```dart
-Column(
-  children: [
-    ThemeRowWidget(),           // light / dark / system
-    CacheBoolRowWidget(cacheKey: CacheKey.notifications),
-    SwitchRowWidget(
-      title: 'Haptic feedback',
-      notifier: hapticFeedbackStateNotifierProvider,
-    ),
-  ],
+// Haptic feedback toggle (persisted to SharedPreferences):
+CacheBoolRowWidget(
+  stateNotifierProvider: hapticFeedbackStateNotifierProvider,
+  displayDivider: true,
+  leftWidget: AppIconWidget.icon(iconData: CupertinoIcons.hand_tap),
+  title: 'Haptic Feedback',
+  description: null,
+  onPressed: (newState) =>
+      TapOnVibrationFeedbackSettings(enable: newState).track(context: context),
+  onChanged: null,
+)
+
+// Prevent screen sleep (persisted):
+CacheBoolRowWidget(
+  stateNotifierProvider: wakelockStateNotifierProvider,
+  displayDivider: true,
+  leftWidget: AppIconWidget.icon(iconData: CupertinoIcons.brightness_solid),
+  title: 'Keep Screen On',
+  description: null,
+  onPressed: (newState) {
+    WakelockPlus.toggle(enable: newState); // apply immediately
+    TapOnPreventSleepSettings(enable: newState).track(context: context);
+  },
+  onChanged: null,
+)
+
+// Dark mode toggle:
+ThemeRowWidget(
+  state: null,
+  displayDivider: false,
+  label: 'Dark Mode',
+  description: null,
+  onPressed: (newTheme) =>
+      TapOnDarkModeSettings(themeData: newTheme).track(context: context),
+)
+
+// Generic non-persisted toggle:
+SwitchRowWidget(
+  state: null,           // null = internal hook state
+  initialData: true,
+  displayDivider: false,
+  leftWidget: null,
+  title: 'Notifications',
+  description: null,
+  onPressed: (newState) { /* handle */ },
+  onChanged: null,
 )
 ```
 
@@ -298,16 +462,41 @@ Column(
 
 ### Storage (Firebase)
 
+Files are fetched from Firebase Storage and cached transparently in SharedPreferences. Use `invalidateCacheDuration` or `invalidateCacheBefore` to control staleness.
+
 ```dart
-// Display an image stored in Firebase Storage
-ImageNetworkFromStorageWidget(storagePath: 'avatars/user_123.jpg')
+// Display a raster image (PNG/JPEG):
+ImageNetworkFromStorageWidget(
+  path: 'images/user_avatar.png',   // Firebase Storage path
+  width: 48,
+  height: 48,
+  fit: BoxFit.cover,
+  invalidateCacheDuration: const Duration(days: 7),
+  progressIndicatorWidget: const CupertinoActivityIndicator(),
+  errorWidget: const Icon(CupertinoIcons.person_circle),
+)
 
-// Display an SVG stored in Firebase Storage
-SvgFromStorageWidget(storagePath: 'icons/logo.svg')
+// Display an SVG icon:
+SvgFromStorageWidget(
+  path: 'icons/category_sport.svg',
+  width: 24,
+  height: 24,
+  color: IosTheme.of(context).defaultLabelColors.primary,
+  invalidateCacheDuration: const Duration(days: 30),
+)
 
-// Fetch a JSON file
-final getJson = ref.read(getJsonUsecaseProvider);
-final result = await getJson('config/remote.json');
+// Force refresh after a content deploy:
+ImageNetworkFromStorageWidget(
+  path: 'images/hero_banner.png',
+  invalidateCacheBefore: DateTime(2025, 6, 1),
+)
+
+// Fetch JSON from Firebase Storage:
+ref.read(getJsonUsecaseProvider)(
+  path: 'config/app_config.json',
+  invalidateCacheDuration: const Duration(hours: 6),
+  invalidateCacheBefore: null,
+);
 ```
 
 ---
@@ -315,33 +504,123 @@ final result = await getJson('config/remote.json');
 ### Theme
 
 ```dart
-// Persist chosen theme
-final setTheme = ref.read(setThemeDataUsecaseProvider);
-await setTheme(ThemeMode.dark);
+// In your root HookConsumerWidget:
+class MyApp extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeData = ref.watch(themeStateNotifierProvider); // IosThemeData?
 
-// Watch and apply in MaterialApp
-final themeMode = ref.watch(themeStateNotifierProvider);
-MaterialApp(
-  themeMode: themeMode,
-  ...
-)
+    return IosTheme(
+      data: themeData ?? IosLightThemeData(), // null = fallback to light
+      child: CupertinoApp(
+        theme: CupertinoThemeData(
+          brightness: switch (themeData) {
+            null                => Brightness.light,
+            IosLightThemeData() => Brightness.light,
+            IosDarkThemeData()  => Brightness.dark,
+          },
+        ),
+        navigatorObservers: defaultNavigatorObservers(context),
+      ),
+    );
+  }
+}
+
+// Toggle dark mode:
+await ref.read(themeStateNotifierProvider.notifier).setThemeData(
+  iosThemeData: IosDarkThemeData(),
+);
+
+// Preview without persisting (e.g. live preview in settings):
+ref.read(themeStateNotifierProvider.notifier).setThemeData(
+  iosThemeData: IosDarkThemeData(),
+  save: false,   // updates state only, does not write to SharedPreferences
+);
+
+// Reset to system theme:
+await ref.read(themeStateNotifierProvider.notifier).removeThemeData();
+
+// Read theme in any widget (no Riverpod needed):
+final theme = IosTheme.of(context);
+final primaryColor = theme.defaultLabelColors.primary;
 ```
 
 ---
 
-## Development
+## Naming conventions
+
+All symbols follow consistent patterns derived from the existing codebase:
+
+| Symbol | Pattern | Examples |
+|---|---|---|
+| Files | `snake_case` + suffix | `theme_state_notifier.dart`, `get_locale_usecase.dart` |
+| Classes | `PascalCase` + semantic suffix | `ThemeStateNotifier`, `GetLocaleUsecase` |
+| Providers | `camelCase` + `Provider` | `themeStateNotifierProvider`, `getLocaleUsecaseProvider` |
+| Use cases | `{Verb}{Entity}Usecase` | `GetThemeDataUsecase`, `InvalidateCustomerInfoCacheUsecase` |
+| Notifiers | `{Feature}StateNotifier` | `CustomerInfoStateNotifier`, `HapticFeedbackStateNotifier` |
+| Widgets | `{Descriptor}Widget` / `{Descriptor}RowWidget` | `LabelRowWidget`, `ImageNetworkFromStorageWidget` |
+| Abstract repos | base name only | `ThemeRepository`, `StorageRepository` |
+| Concrete repos | tech prefix or `Impl` suffix | `FirebaseStorageRepository`, `ThemeRepositoryImpl` |
+| Failures | `{Specific}Failure` | `UnidentifiedStorageFailure`, `EmptyCacheStorageFailure` |
+| Events (tap) | `TapOn{Target}` | `TapOnDarkModeSettings`, `TapOnReviewButton` |
+| Events (callback) | `On{Event}Callback` | `OnSyncPurchasesCallback`, `OnPresentedPaywallCallback` |
+| Hooks | `use{Feature}` | `useSafeEffect`, `useDebounce` |
+| Constants | `k{Name}` | `kDefaultHapticFeedback`, `kEnableBackdropImageFilter` |
+| SharedPreferences keys | function appending `Debug` in debug mode | `hapticFeedbackKey()`, `themeKey()` |
+| Family args | `{Feature}FamilyArgs` | `GetDownloadUrlFamilyArgs`, `GetJsonFamilyArgs` |
+
+---
+
+## AI tooling
+
+### Claude Code skills
+
+The `.claude/skills/` directory contains structured skill files that Claude Code loads automatically based on context. Each skill documents a specific domain and includes a "What Is Already Implemented" table so the AI can answer "is X already done?" without scanning the codebase.
+
+| Skill | Trigger context |
+|---|---|
+| `core-architecture` | Either, State, SafeStateNotifier, GetStateNotifier, hooks, setup providers |
+| `feature-modules` | Adding a new feature module, layer structure questions |
+| `analytics-feature` | Adding events, new analytics SDK, Remote Config gating |
+| `riverpod-hooks-patterns` | Writing providers, widgets, hooks |
+| `naming-conventions` | Creating any new file or symbol |
+| `feature-locale` | Locale persistence, language selection |
+| `feature-revenue` | In-app purchases, paywall, subscription status |
+| `feature-review` | Rate-app flow, feedback email |
+| `feature-route` | Tab navigation, NavigationTab, analytics observers |
+| `feature-settings` | Settings toggles, haptic feedback, wakelock |
+| `feature-storage` | Firebase Storage, image/SVG widgets, caching |
+| `feature-theme` | Dark/light mode, ThemeStateNotifier, theme persistence |
+
+### Cursor rules
+
+The `.cursor/rules/` directory contains `.mdc` rule files that Cursor applies during code generation.
+
+| Rule file | `alwaysApply` | Scope |
+|---|---|---|
+| `naming-conventions.mdc` | `true` | All files |
+| `architecture.mdc` | `true` | All files |
+| `riverpod-patterns.mdc` | `false` | `lib/**/*.dart` |
+| `feature-development.mdc` | `false` | `lib/src/features/**/*.dart` |
+| `analytics-events.mdc` | `false` | Analytics + event files |
+| `package-usage.mdc` | `false` | Consuming app integration |
+| `feature-locale.mdc` | `false` | `lib/src/features/locale/**` |
+| `feature-revenue.mdc` | `false` | `lib/src/features/revenue/**` |
+| `feature-review.mdc` | `false` | `lib/src/features/review/**` |
+| `feature-route.mdc` | `false` | `lib/src/features/route/**` |
+| `feature-settings.mdc` | `false` | `lib/src/features/settings/**` |
+| `feature-storage.mdc` | `false` | `lib/src/features/storage/**` |
+| `feature-theme.mdc` | `false` | `lib/src/features/theme/**` |
 
 ### Dart MCP server
 
-The repository ships with a `.cursor/mcp.json.example` that wires up the [Dart MCP server](https://dart.dev/tools/dart-devtools) so Cursor can resolve Dart/Flutter symbols in AI completions.
-
-Copy and customise for your local setup:
+The repository ships with `.cursor/mcp.json.example` that wires up the Dart MCP server so Cursor can resolve Dart/Flutter symbols in AI completions.
 
 ```bash
 cp .cursor/mcp.json.example .cursor/mcp.json
 ```
 
-Then update the `dart` executable path to match your local Flutter SDK:
+Update the `dart` executable path to match your local Flutter SDK:
 
 ```json
 {
@@ -356,22 +635,15 @@ Then update the `dart` executable path to match your local Flutter SDK:
 
 > `.cursor/mcp.json` is git-ignored so each developer keeps their own local paths.
 
----
-
 ### Ralph orchestrator
 
-The project uses [Ralph](https://github.com/mikeyobrien/ralph-orchestrator) for AI-driven task automation. The workflow is:
-
-1. Write your task description in `PROMPT.md`.
-2. Run `ralph run` — Ralph drives Claude in a loop until the task is complete or `LOOP_COMPLETE` is written.
-
-**Quick start:**
+The project supports [Ralph](https://github.com/mikeyobrien/ralph-orchestrator) for AI-driven task automation:
 
 ```bash
 # Install ralph (requires Node.js)
 npm install -g ralph-orchestrator
 
-# Create your task
+# Describe your task
 echo "Add a new analytics event for onboarding completion" > PROMPT.md
 
 # Run
@@ -381,14 +653,12 @@ ralph run
 **Key `ralph.yml` options:**
 
 | Key | Default | Description |
-|-----|---------|-------------|
-| `cli.backend` | `claude` | LLM backend to use |
-| `event_loop.max_iterations` | `100` | Safety cap on LLM iterations |
-| `git.commit.message_format` | `conventional` | Commit style: `conventional`, `simple`, or `custom` |
-| `git.push.auto_push` | `true` | Push to `origin` after each commit |
-| `git.branch.prefix` | `ralph/` | Branch prefix for Ralph-generated branches |
-
-Copy `ralph.yml.example` to `ralph.yml` and fill in your git credentials if you need to reset the config:
+|---|---|---|
+| `cli.backend` | `claude` | LLM backend |
+| `event_loop.max_iterations` | `100` | Safety cap on iterations |
+| `git.commit.message_format` | `conventional` | Commit style |
+| `git.push.auto_push` | `true` | Push after each commit |
+| `git.branch.prefix` | `ralph/` | Branch prefix |
 
 ```bash
 cp ralph.yml.example ralph.yml
@@ -399,6 +669,6 @@ cp ralph.yml.example ralph.yml
 ## Contributing
 
 1. Fork the repository and create a feature branch.
-2. Follow the existing clean-architecture layer conventions.
+2. Follow the clean-architecture layer conventions and naming conventions documented above.
 3. Run `flutter analyze` and `flutter test` before opening a PR.
 4. Use [Conventional Commits](https://www.conventionalcommits.org/) for all commit messages.
