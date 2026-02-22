@@ -30,6 +30,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Cursor config
+
+.cursor/mcp.json
 
 # Ralph Orchestrator config
 ralph.yml
