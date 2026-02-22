@@ -1,0 +1,213 @@
+---
+description: Naming conventions for all symbols and files in flutter_core_modules — files, classes, providers, use cases, notifiers, widgets, hooks, failures, analytics events, constants, family args, and SharedPreferences keys. Apply to every file in the project.
+alwaysApply: true
+---
+
+# Naming Conventions — flutter_core_modules
+
+## Files — `snake_case` with semantic suffix
+
+| Suffix | Use for |
+|---|---|
+| `*_usecase.dart` | Domain use case class |
+| `*_state_notifier.dart` | StateNotifier subclass |
+| `*_repository.dart` | Repository (abstract or concrete, in their own directories) |
+| `*_data_source.dart` | DataSource (abstract or concrete) |
+| `*_widget.dart` | Widget class |
+| `*_failure.dart` | Sealed failure class |
+| no suffix | Hooks, utils, config (`safe_effect.dart`, `revenue_cat.dart`) |
+
+---
+
+## Use Cases — `{Verb}{Entity}Usecase`
+
+Always verb-first. Allowed verbs:
+
+| Verb | Example |
+|---|---|
+| `Get` | `GetThemeDataUsecase`, `GetLocaleUsecase`, `GetDownloadUrlUsecase` |
+| `Set` | `SetThemeDataUsecase`, `SetLocaleUsecase` |
+| `Remove` | `RemoveThemeDataUsecase`, `RemoveLocaleUsecase` |
+| `Sync` | `SyncPurchasesUsecase` |
+| `Invalidate` | `InvalidateCustomerInfoCacheUsecase` |
+| `Add` / `Remove` | `AddCustomerInfoUpdateListenerUsecase` |
+| `Track` | `TrackEventUsecase` |
+| `Is` | `IsAvailableUsecase` |
+| `Request` | `RequestReviewUsecase` |
+| `Open` | `OpenStoreListingUsecase` |
+
+---
+
+## State Notifiers — `{Feature}StateNotifier`
+
+```
+ThemeStateNotifier
+HapticFeedbackStateNotifier
+CustomerInfoStateNotifier
+GetDownloadUrlStateNotifier
+InAppReviewStateNotifier
+```
+
+The provider variable mirrors the class name: `themeStateNotifierProvider`, `customerInfoStateNotifierProvider`.
+
+---
+
+## Providers — `camelCase` + `Provider` suffix
+
+```dart
+// Use cases:
+getThemeDataUsecaseProvider
+setThemeDataUsecaseProvider
+getDownloadUrlUsecaseProvider
+
+// Notifiers:
+themeStateNotifierProvider
+hapticFeedbackStateNotifierProvider
+getDownloadUrlStateNotifierProvider   // family
+
+// Repositories / data sources:
+themeRepositoryProvider
+firebaseStorageRepositoryProvider
+sharedPreferencesCacheLocalDataSourceProvider
+
+// Derived / computed:
+isPremiumCustomerProvider
+navigatiorKeyProvider   // NOTE: "navigatior" spelling is intentional — do not rename
+```
+
+---
+
+## Repositories
+
+- **Abstract interface:** `{Feature}Repository` — e.g. `ThemeRepository`, `StorageRepository`
+- **Concrete:** `{Feature}RepositoryImpl` when no technology prefix makes sense, or `{Technology}{Feature}Repository` — e.g. `ThemeRepositoryImpl`, `FirebaseStorageRepository`
+
+---
+
+## Data Sources
+
+- **Abstract:** `{Domain}DataSource` — e.g. `StorageRemoteDataSource`, `CacheLocalDataSource`
+- **Concrete:** `{Technology}{Domain}DataSource` — e.g. `FirebaseStorageRemoteDataSource`, `SharedPreferencesCacheLocalDataSource`
+
+---
+
+## Widgets — `{Descriptor}Widget` or `{Descriptor}RowWidget`
+
+```
+LabelRowWidget, ThemeRowWidget, SwitchRowWidget, CacheBoolRowWidget
+ImageNetworkFromStorageWidget, SvgFromStorageWidget
+ErrorIndicatorWidget, ShellRouteWidget, WebViewModalSheetWidget
+```
+
+---
+
+## Analytics Events
+
+Three sub-patterns — pick based on event type:
+
+| Type | Pattern | Examples |
+|---|---|---|
+| UI tap | `TapOn{Target}` | `TapOnDarkModeSettings`, `TapOnReviewButton`, `TapOnGetPremiumButton` |
+| Action / state change | `{Verb}{Entity}` | `ChangeLanguageTo`, `InitApp`, `InAppReviewIsAvailable` |
+| SDK callback | `On{Event}Callback` | `OnHasActiveSubscriptionCallback`, `OnSyncPurchasesCallback` |
+
+- Class name must be `PascalCase`; event name is derived automatically as `snake_case` — **do NOT override `name`**
+- Always extend `EventEntity`; always implement `Map<String, Object>? get properties`
+
+---
+
+## Failures — `{Specific}Failure`
+
+```dart
+sealed class StorageFailure {}                           // sealed base
+class UnidentifiedStorageFailure extends StorageFailure {}
+class EmptyCacheStorageFailure extends StorageFailure {}
+```
+
+---
+
+## Hooks — `use` prefix, `camelCase`
+
+```dart
+useSafeEffect()
+useDebounce()
+useInterval()
+useSafeInterval()
+useFixedExtentScrollController()
+```
+
+---
+
+## Family Args — `{Feature}FamilyArgs`
+
+```dart
+GetDownloadUrlFamilyArgs
+GetJsonFamilyArgs
+```
+
+---
+
+## Constants — `k` prefix + `PascalCase`
+
+```dart
+const kDefaultHapticFeedback = true;
+const kEnableBackdropImageFilter = true;
+const kDisableOpacity = .5;
+```
+
+---
+
+## SharedPreferences Keys — Function, Not Literal
+
+Always use a key-generating function that appends `Debug` in `kDebugMode`:
+
+```dart
+// CORRECT:
+const _key = 'hapticFeedback';
+String hapticFeedbackKey() => kDebugMode ? '${_key}Debug' : _key;
+
+// WRONG — never hardcode the debug variant:
+const key = 'hapticFeedbackDebug';
+```
+
+---
+
+## Directory Layout per Feature
+
+```
+features/{feature}/
+├── domain/
+│   ├── repositories/     # abstract only
+│   ├── data_sources/     # abstract only
+│   ├── entities/
+│   ├── failures/
+│   └── usecases/         # one file per use case
+├── data/
+│   ├── repositories/     # concrete impls
+│   └── data_sources/     # concrete impls
+└── presentation/
+    ├── notifiers/
+    ├── widgets/
+    ├── hooks/
+    ├── providers/
+    ├── config/
+    └── utils/
+```
+
+Presentation-only features (no domain/data): `route/`, `settings/`.
+
+---
+
+## Checklist for New Symbols
+
+Before creating any new symbol:
+
+- [ ] File: `snake_case` + correct suffix
+- [ ] Class: `PascalCase` + correct suffix (`Usecase`, `StateNotifier`, `Repository`, `Widget`, `Failure`)
+- [ ] Use case: verb-first (`Get`, `Set`, `Remove`, `Sync`, `Track`, etc.)
+- [ ] Provider: mirrors class name, camelCase, ends with `Provider`
+- [ ] Analytics event: correct sub-pattern (`TapOn*`, `On*Callback`, or verb-noun)
+- [ ] Hook: starts with `use`
+- [ ] Constant: starts with `k`
+- [ ] SharedPreferences key: function that appends `Debug` in `kDebugMode`
+- [ ] File location: correct layer (domain → data → presentation) and sub-directory

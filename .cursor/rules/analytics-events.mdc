@@ -1,0 +1,146 @@
+---
+description: Rules for defining and tracking analytics events in flutter_core_modules. Covers EventEntity subclass structure, event naming, property types, provider gating, and forbidden patterns. Apply to all analytics event files and any file that calls .track().
+alwaysApply: false
+globs: ["lib/src/features/analytics/**/*.dart", "lib/**/*event*.dart"]
+---
+
+# Analytics Event Rules — flutter_core_modules
+
+## EventEntity Subclass Structure
+
+All analytics events are Dart classes extending `EventEntity`:
+
+```dart
+// Minimum required shape
+class MyEvent extends EventEntity {
+  const MyEvent();
+
+  @override
+  Map<String, Object>? get properties => const {};
+}
+
+// With properties
+class MyEventWithData extends EventEntity {
+  final String itemId;
+  final double amount;
+
+  const MyEventWithData({required this.itemId, required this.amount});
+
+  @override
+  Map<String, Object>? get properties => {
+    'item_id': itemId,
+    'amount': amount,
+  };
+}
+```
+
+## Event Naming — Automatic from Class Name
+
+**Do NOT override `name`.** The event name is derived automatically from `runtimeType.toString()` converted to snake_case:
+
+```
+TapOnReviewButton       → 'tap_on_review_button'
+ChangeLanguageTo        → 'change_language_to'
+OnSyncPurchasesCallback → 'on_sync_purchases_callback'
+```
+
+Class names must be:
+- `PascalCase` Dart classes
+- Descriptive of the action or event (not `Event1`, `Clicked`, etc.)
+- Prefixed with `TapOn` for UI tap events
+
+## Property Value Types
+
+Properties map `String` keys to `Object` values. Allowed value types:
+- `String`
+- `num` / `int` / `double`
+- `bool`
+- `Map<String, Object>` (nested)
+- `List<Object>` (items must also be one of these types)
+
+```dart
+// CORRECT
+@override
+Map<String, Object>? get properties => {
+  'plan_id': planId,        // String
+  'price': price,           // double
+  'is_annual': isAnnual,    // bool
+  'locale': {               // nested Map
+    'languageCode': locale.languageCode,
+  },
+};
+
+// WRONG — avoid nullable values in properties map
+@override
+Map<String, Object>? get properties => {
+  'value': maybeNull ?? 'unknown', // use conditional inclusion instead
+};
+
+// CORRECT — conditionally include nullable values
+@override
+Map<String, Object>? get properties => {
+  if (label != null) 'label': label!,
+  if (title != null) 'title': title!,
+};
+```
+
+## Tracking Events
+
+```dart
+// From BuildContext (widget or static method):
+MyEvent().track(context: context);
+
+// With properties:
+MyEventWithData(itemId: 'abc', amount: 9.99).track(context: context);
+```
+
+**Never** call analytics SDKs directly (Amplitude, Mixpanel, etc.). Always go through `EventEntity.track()` or `TrackEventUsecase`.
+
+## Analytics is Disabled in Debug Mode
+
+`DotEnv.enableAnalytics = !kDebugMode` — events are silently dropped in debug. In debug mode, events are logged to the console via `developer.log()`. This is expected behavior.
+
+## File Organization
+
+| Event Category | File |
+|---|---|
+| Generic app lifecycle events | `domain/entities/events/events.dart` |
+| UI tap interactions | `domain/entities/events/tap_on_events.dart` |
+| Feature-specific events | `domain/entities/events/<feature>_events.dart` (create if needed) |
+
+## Provider Gating
+
+Analytics providers check both `.env` tokens AND Firebase Remote Config before initializing. Never initialize an analytics SDK without both checks:
+
+```dart
+static bool get enabled =>
+    DotEnv.getMyToken() != null &&         // token present in .env
+    FirebaseRemoteConfigCore.enableMySdk;  // remote config flag is true
+```
+
+This allows disabling analytics providers at runtime without a release.
+
+## Firebase Analytics Property Restriction
+
+Firebase Analytics asserts that event parameter values must be `String` or `num`. The `propertiesToAvoidAssertInputTypes` getter converts all values to `String`. The `AnalyticsRepositoryImpl` uses this automatically for Firebase:
+
+```dart
+// AnalyticsRepositoryImpl already handles this:
+_firebaseAnalytics.logEvent(
+  name: event.name,
+  parameters: event.propertiesToAvoidAssertInputTypes, // all values stringified
+),
+```
+
+Do not override `propertiesToAvoidAssertInputTypes` unless you have a specific reason.
+
+## Navigator Observers
+
+Add `defaultNavigatorObservers(context)` to all `CupertinoApp` / `MaterialApp` navigator observers to automatically track screen views in Firebase Analytics and PostHog:
+
+```dart
+CupertinoApp(
+  navigatorObservers: defaultNavigatorObservers(context),
+  ...
+)
+```

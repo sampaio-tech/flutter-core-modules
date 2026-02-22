@@ -1,0 +1,136 @@
+---
+description: Clean Architecture rules for flutter_core_modules. Enforces the three-layer domain/data/presentation separation, Either error handling, sealed State machine, and proper dependency direction. Apply to all Dart files in lib/.
+alwaysApply: true
+---
+
+# Architecture Rules — flutter_core_modules
+
+## Layer Structure
+
+This package uses strict Clean Architecture with three layers per feature:
+
+```
+domain/      ← pure Dart, no Flutter, no third-party imports
+data/        ← implements domain abstractions, may use third-party SDKs
+presentation/ ← Flutter + Riverpod only, no direct SDK calls
+```
+
+### Dependency Direction (enforced)
+
+- `presentation` → `domain` (ALLOWED)
+- `data` → `domain` (ALLOWED)
+- `domain` → nothing outside domain (ENFORCED — no Flutter, no third-party)
+- `presentation` → `data` only to import Riverpod providers (ALLOWED)
+- `data` → `presentation` (FORBIDDEN)
+- `domain` → `data` (FORBIDDEN — only through abstract interfaces)
+
+## Either<L, R> — Error Handling
+
+All operations that can fail return `Future<Either<Failure, T>>` or `Either<Failure, T>`.
+
+```dart
+// CORRECT — use Either for fallible operations
+Future<Either<StorageFailure, String>> getDownloadUrl({...});
+
+// WRONG — never throw exceptions across layer boundaries
+Future<String> getDownloadUrl({...}) { throw Exception('...'); }
+```
+
+- `L` (Left) = Failure type (always a sealed class)
+- `R` (Right) = success value
+- Use `.fold(onLeft, onRight)` to consume Either values
+- Never use `try-catch` in domain layer — only in data layer implementations
+
+## Failure Types
+
+Define failures as sealed classes. One sealed class per feature domain:
+
+```dart
+// CORRECT
+sealed class StorageFailure {}
+class UnidentifiedStorageFailure extends StorageFailure {}
+class EmptyCacheStorageFailure extends StorageFailure {}
+
+// WRONG — never use String, int, or Exception as failure types
+```
+
+## State Machine
+
+All async data has exactly four states — use the core `State<F, S>` sealed class:
+
+```dart
+sealed class State<F, S> {}
+class StartedState<F, S>       extends State<F, S> {} // initial
+class LoadInProgressState<F, S> extends State<F, S> {} // loading
+class LoadSuccessState<F, S>   extends State<F, S> {} // success
+class LoadFailureState<F, S>   extends State<F, S> {} // failure
+```
+
+**Never** represent loading state as a separate bool field alongside data. **Always** use pattern matching on `State<F, S>`.
+
+## Repository Pattern
+
+Every feature must have:
+1. An `abstract class FooRepository` in `domain/repositories/`
+2. A `class FooRepositoryImpl extends FooRepository` in `data/repositories/`
+3. A `final fooRepositoryProvider = Provider.autoDispose<FooRepository>(...)` in the data file
+
+The provider **must** return the abstract type `FooRepository`, not `FooRepositoryImpl`.
+
+## Use Case Pattern
+
+One Dart file per use case. Every use case:
+- Is a `const` constructor class
+- Has a single `call()` method with named parameters
+- Has its own `Provider.autoDispose` in the same file
+- Imports the data layer provider for dependency injection
+
+```dart
+class GetLocaleUsecase {
+  final LocaleRepository _repository;
+  const GetLocaleUsecase({required LocaleRepository repository}) : _repository = repository;
+
+  Locale? call() => _repository.getLocale();
+}
+
+final getLocaleUsecaseProvider = Provider.autoDispose<GetLocaleUsecase>(
+  (ref) => GetLocaleUsecase(repository: ref.read(localeRepositoryProvider)),
+);
+```
+
+## Debug/Prod Key Separation
+
+All SharedPreferences keys and database keys **must** use `kDebugMode` suffix:
+
+```dart
+// CORRECT
+String hapticFeedbackKey() => kDebugMode ? '${_key}Debug' : _key;
+
+// Also acceptable via enum:
+enum DatabaseKeys {
+  locale;
+  String get key => kDebugMode ? '${name}Debug' : name;
+}
+
+// WRONG — same key in debug and prod pollutes production data
+const String _key = 'hapticFeedback';
+```
+
+## Notifier Hierarchy
+
+All notifiers **must** extend `SafeStateNotifier<T>` (never raw `StateNotifier<T>`):
+
+```dart
+// CORRECT
+class MyNotifier extends SafeStateNotifier<MyState> { ... }
+
+// WRONG — missing disposed-check guard
+class MyNotifier extends StateNotifier<MyState> { ... }
+```
+
+For async fetch patterns: extend `GetStateNotifier<Failure, Entity>` and implement `forwardedGet()`.
+For cached boolean settings: extend `CacheBoolStateNotifier`.
+
+## Barrel Export
+
+Every public file **must** be exported from `lib/flutter_core_modules.dart`. Internal implementation files that are not intended for external consumption should still be exported if they provide Riverpod providers that consumers need to use.

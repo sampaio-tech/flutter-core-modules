@@ -1,0 +1,143 @@
+---
+description: Rules for the revenue feature in flutter_core_modules — RevenueCat integration, CustomerInfoStateNotifier, paywall presentation, isPremiumCustomerProvider, and presentPaywallForwarded. Apply when working with in-app purchases, subscriptions, paywalls, or premium gating.
+alwaysApply: false
+globs: ["lib/src/features/revenue/**/*.dart"]
+---
+
+# Feature: Revenue — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| RevenueCat SDK init (iOS + Android) | ✅ `initPlatformState()` — called by `DotEnv.init()` |
+| Fetch customer info | ✅ `GetCustomerInfoUsecase` / `notifier.get()` |
+| Reactive premium status | ✅ `isPremiumCustomerProvider` — a `Provider<bool>` |
+| Real-time subscription listener | ✅ `notifier.listen()` / auto-disposed on `dispose()` |
+| Present paywall UI | ✅ `notifier.presentPaywall()` |
+| Full paywall flow with analytics | ✅ `presentPaywallForwarded()` |
+| Sync purchases with store | ✅ `SyncPurchasesUsecase` |
+| Invalidate RevenueCat cache | ✅ `InvalidateCustomerInfoCacheUsecase` |
+| Get RevenueCat user ID | ✅ `GetAppUserIdUsecase` |
+| Check anonymous status | ✅ `GetIsAnonymousUsecase` |
+| Custom paywall UI | ❌ Not in package — uses RevenueCat's built-in UI only |
+| Entitlement-specific checks | ❌ Not in package — use `customerInfo.entitlements.active` directly |
+
+**Before adding payment/subscription code, check if the above already covers the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/revenue/
+├── domain/
+│   ├── repositories/revenue_repository.dart
+│   └── usecases/  (7 use cases)
+├── data/
+│   └── repositories/revenue_repository.dart   # RevenueRepositoryImpl
+└── presentation/
+    ├── config/
+    │   ├── revenue_cat.dart                    # initPlatformState()
+    │   └── functions.dart                      # presentPaywallForwarded()
+    └── notifiers/customer_info/
+        └── customer_info_state_notifier.dart   # CustomerInfoStateNotifier + isPremiumCustomerProvider
+```
+
+---
+
+## Correct Usage Patterns
+
+### App initialization (already handled)
+```dart
+// DotEnv.init() already calls initPlatformState() — do NOT call it again
+await DotEnv.init(remoteConfig);
+```
+
+### Fetch + listen on app start
+```dart
+// Call this once on root widget mount (e.g., useSafeEffect):
+final notifier = ref.read(customerInfoStateNotifierProvider.notifier);
+await notifier.get();    // initial fetch
+await notifier.listen(); // register real-time SDK listener
+```
+
+### Check premium status reactively
+```dart
+// Use isPremiumCustomerProvider — never compute premium manually
+final isPremium = ref.watch(isPremiumCustomerProvider);
+```
+
+### Gate a feature behind a paywall
+```dart
+await presentPaywallForwarded(
+  context: context,
+  event: TapOnGetPremiumButton(),  // analytics event for the CTA
+  enable: true,
+  featureLocked: true,
+  onTap: () { /* action if user already has access */ },
+);
+```
+
+### Show paywall from a settings button
+```dart
+await presentPaywallForwarded(
+  context: context,
+  event: TapOnGetPremiumButton(),
+  enable: true,
+  featureLocked: false,
+  onTap: null,
+);
+```
+
+---
+
+## `RevenueRepositoryImpl` Guards
+
+Every method in `RevenueRepositoryImpl` checks `Purchases.isConfigured` before calling the SDK:
+
+```dart
+if (!await Purchases.isConfigured) return null;
+```
+
+**Never** call `Purchases.*` static methods directly — always go through the use cases or `CustomerInfoStateNotifier`.
+
+---
+
+## `isPremiumCustomerProvider` — Canonical Premium Check
+
+```dart
+// CORRECT — reactive, single source of truth:
+final isPremium = ref.watch(isPremiumCustomerProvider);
+
+// WRONG — manual check:
+final info = ref.watch(customerInfoStateNotifierProvider);
+final isPremium = info?.activeSubscriptions.isNotEmpty ?? false; // don't do this
+```
+
+---
+
+## `customerInfoStateNotifierProvider` — NOT autoDispose
+
+This provider is `StateNotifierProvider` (no autoDispose) because subscription state must persist for the app lifetime. Do NOT change it to autoDispose.
+
+---
+
+## `.env` Keys Required
+
+```
+REVENUECAT_PROJECT_APPLE_API_KEY=appl_...
+REVENUECAT_PROJECT_GOOGLE_API_KEY=goog_...
+```
+
+If either key is missing, `initPlatformState()` will not configure the SDK and all `RevenueRepositoryImpl` calls will return `null`.
+
+---
+
+## Forbidden Patterns
+
+- **Never** call RevenueCat's `Purchases.*` static methods directly — always use the repository/use cases.
+- **Never** check `customerInfo?.activeSubscriptions.isNotEmpty` manually — use `isPremiumCustomerProvider`.
+- **Never** skip `await notifier.listen()` on app root mount — real-time subscription updates will be missed.
+- **Never** call `initPlatformState()` manually — `DotEnv.init()` handles it.
+- **Never** add entitlement-specific logic to this package — entitlement checks belong in the consuming app.

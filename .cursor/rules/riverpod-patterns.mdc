@@ -1,0 +1,202 @@
+---
+description: Riverpod and flutter_hooks usage rules for flutter_core_modules. Covers provider type selection, HookConsumerWidget patterns, legacy StateNotifier import, autoDispose rules, and common pitfalls. Apply to all Dart files using hooks_riverpod or flutter_hooks.
+alwaysApply: false
+globs: ["lib/**/*.dart"]
+---
+
+# Riverpod + Hooks Rules — flutter_core_modules
+
+## Package Imports
+
+The project uses `hooks_riverpod` v3.x. StateNotifier APIs require the legacy import:
+
+```dart
+// For StateNotifier, StateNotifierProvider:
+import 'package:hooks_riverpod/legacy.dart';
+
+// For Provider, HookConsumerWidget, WidgetRef, etc.:
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+// For hooks (useState, useEffect, useMemoized, etc.):
+import 'package:flutter_hooks/flutter_hooks.dart';
+```
+
+**Never** use `StateNotifier` with the main `hooks_riverpod.dart` import — it is not exported in v3.x and will cause a compile error.
+
+## Widget Base Classes
+
+| Need | Base Class |
+|---|---|
+| Riverpod + hooks | `HookConsumerWidget` |
+| Hooks only | `HookWidget` |
+| Riverpod only | `ConsumerWidget` |
+| Neither | `StatelessWidget` |
+
+```dart
+// CORRECT
+class MyWidget extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) { ... }
+}
+
+// WRONG — StatelessWidget with hooks causes runtime error
+class MyWidget extends StatelessWidget {
+  Widget build(BuildContext context) {
+    final state = useState(false); // CRASH
+  }
+}
+```
+
+## Provider Types
+
+| Use Case | Type |
+|---|---|
+| Sync singleton (no dispose) | `Provider<T>` |
+| Sync, auto-dispose | `Provider.autoDispose<T>` |
+| Parameterized | `Provider.family<T, Arg>` |
+| Mutable state, global | `StateNotifierProvider<N, S>` |
+| Mutable state, scoped | `StateNotifierProvider.autoDispose<N, S>` |
+| Mutable state, parameterized | `StateNotifierProvider.autoDispose.family<N, S, Arg>` |
+
+## autoDispose Rules
+
+**Always use `autoDispose`:** use cases, repository implementations, screen-scoped notifiers.
+
+**Never use `autoDispose`:** global app-lifecycle providers — `sharedPreferencesProvider`, `themeStateNotifierProvider`, `customerInfoStateNotifierProvider`, `hapticFeedbackStateNotifierProvider`, `wakelockStateNotifierProvider`, `inAppReviewStateNotifierProvider`, `launchFeedbackStateNotifierProvider`.
+
+## ref.watch vs ref.read
+
+```dart
+// CORRECT — watch in build for reactive state
+Widget build(BuildContext context, WidgetRef ref) {
+  final isPremium = ref.watch(isPremiumCustomerProvider);
+  return Text(isPremium ? 'Premium' : 'Free');
+}
+
+// CORRECT — read in callbacks
+onPressed: () => ref.read(myNotifier.notifier).doSomething();
+
+// WRONG — read in build (won't update)
+Widget build(BuildContext context, WidgetRef ref) {
+  final isPremium = ref.read(isPremiumCustomerProvider); // BUG
+}
+
+// WRONG — watch in callback (throws on disposed widget)
+onPressed: () {
+  final notifier = ref.watch(myNotifier.notifier); // BUG
+}
+```
+
+## Hook Rules
+
+Hooks must always be called in the same order at the top level of `build()`:
+
+```dart
+// CORRECT
+Widget build(BuildContext context, WidgetRef ref) {
+  final controller = useTextEditingController();
+  final isLoading  = useState(false);
+  final debounce   = useDebounce(const Duration(milliseconds: 300));
+  // ... rest of build
+}
+
+// WRONG — conditional hook call
+Widget build(BuildContext context, WidgetRef ref) {
+  if (someCondition) {
+    final state = useState(false); // CRASH — hooks must be unconditional
+  }
+}
+```
+
+## useMemoized for Family Args
+
+Always stabilize family provider args with `useMemoized`:
+
+```dart
+// CORRECT — stable reference, no unnecessary provider re-creation
+final args = useMemoized(
+  () => GetDownloadUrlFamilyArgs(path: path),
+  [path],
+);
+final state = ref.watch(getDownloadUrlStateNotifierProvider(args));
+
+// WRONG — new args on every rebuild
+final state = ref.watch(
+  getDownloadUrlStateNotifierProvider(GetDownloadUrlFamilyArgs(path: path)),
+);
+```
+
+## useSafeEffect for Post-Frame Operations
+
+Use `useSafeEffect` (not `useEffect`) when the effect needs the widget tree to be mounted:
+
+```dart
+// CORRECT — runs after first frame
+useSafeEffect(() {
+  ref.read(myProvider.notifier).lazyGet();
+  return () {};
+}, [args]);
+
+// RISKY — useEffect may run before frame is built in some cases
+useEffect(() {
+  ref.read(myProvider.notifier).lazyGet();
+  return null;
+}, [args]);
+```
+
+## WidgetsBinding.instance.addPostFrameCallback
+
+When setting state from inside a build cycle (e.g., in a listener or a `ValueNotifier` change), defer with `addPostFrameCallback`:
+
+```dart
+// CORRECT
+internalState.addListener(() {
+  WidgetsBinding.instance.addPostFrameCallback(
+    (_) => ref.read(themeStateNotifierProvider.notifier).setThemeData(iosThemeData: internalState.value),
+  );
+});
+
+// WRONG — setState during build
+internalState.addListener(() {
+  ref.read(themeStateNotifierProvider.notifier).setThemeData(...); // BUG
+});
+```
+
+## ProviderScope.containerOf — Outside Widget Context
+
+In static methods, `EventEntity.track()`, or any code with `BuildContext` but no `WidgetRef`:
+
+```dart
+final container = ProviderScope.containerOf(context);
+final hapticEnabled = container.read(hapticFeedbackStateNotifierProvider);
+container.read(analyticsRepositoryProvider).track(event);
+```
+
+## Lazy Get Pattern
+
+For family-based async notifiers, trigger `lazyGet()` on mount. This prevents fetching on `StartedState` or `LoadFailureState` but skips if already loading or succeeded:
+
+```dart
+// In provider factory:
+WidgetsBinding.instance.addPostFrameCallback((_) => notifier.lazyGet());
+
+// Also in widget for retry:
+useSafeEffect(() {
+  ref.read(myProvider(args).notifier).lazyGet();
+  return () {};
+}, [args]);
+```
+
+## Consumer for Scoped Rebuilds
+
+Use `Consumer` with the `child` optimization to prevent expensive sub-trees from rebuilding:
+
+```dart
+Consumer(
+  child: ExpensiveWidget(), // built once
+  builder: (context, ref, child) {
+    ref.watch(someProvider); // only this Consumer rebuilds
+    return child!;
+  },
+)
+```

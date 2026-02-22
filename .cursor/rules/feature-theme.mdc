@@ -1,0 +1,153 @@
+---
+description: Rules for the theme feature in flutter_core_modules — ThemeStateNotifier, ThemeRepository, IosThemeData persistence, IosLightThemeData / IosDarkThemeData, save:false preview pattern, and wiring theme to the app root. Apply when implementing dark/light mode, theme persistence, or theme-aware widgets.
+alwaysApply: false
+globs: ["lib/src/features/theme/**/*.dart"]
+---
+
+# Feature: Theme — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| Persist dark/light theme preference | ✅ `SetThemeDataUsecase` |
+| Restore theme on app start (sync read) | ✅ `ThemeStateNotifier` constructor |
+| Reactive theme updates across app | ✅ `themeStateNotifierProvider` (non-autoDispose) |
+| Reset to system theme | ✅ `RemoveThemeDataUsecase` / `notifier.removeThemeData()` |
+| Preview theme without saving | ✅ `notifier.setThemeData(save: false)` |
+| Dark/Light mode toggle row widget | ✅ `ThemeRowWidget` |
+| System theme detection | ❌ Not in package — use `MediaQuery.platformBrightnessOf(context)` when state is null |
+| Multiple custom themes beyond light/dark | ❌ Only `IosLightThemeData` / `IosDarkThemeData` supported |
+
+**Before adding theme code, verify whether the above already satisfies the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/theme/
+├── domain/
+│   ├── repositories/theme_repository.dart          # abstract ThemeRepository
+│   └── usecases/
+│       ├── get_theme_data_usecase.dart
+│       ├── set_theme_data_usecase.dart
+│       └── remove_theme_data_usecase.dart
+├── data/
+│   └── repositories/theme_repository.dart          # ThemeRepositoryImpl + provider
+└── presentation/
+    └── notifiers/
+        └── theme_state_notifier.dart               # ThemeStateNotifier + themeStateNotifierProvider
+```
+
+---
+
+## Wiring Theme to the App Root
+
+```dart
+class MyApp extends HookConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeData = ref.watch(themeStateNotifierProvider); // IosThemeData?
+
+    return IosTheme(
+      data: themeData ?? IosLightThemeData(), // null = fallback to light
+      child: CupertinoApp(
+        theme: CupertinoThemeData(
+          brightness: switch (themeData) {
+            null                => Brightness.light,
+            IosLightThemeData() => Brightness.light,
+            IosDarkThemeData()  => Brightness.dark,
+          },
+        ),
+      ),
+    );
+  }
+}
+```
+
+**Always** provide a fallback (`?? IosLightThemeData()`) — `null` means "use system default" and the app root must decide the fallback.
+
+---
+
+## Setting and Removing Theme
+
+```dart
+// Persist dark mode:
+await ref.read(themeStateNotifierProvider.notifier).setThemeData(
+  iosThemeData: IosDarkThemeData(),
+);
+
+// Reset to system default (sets state to null):
+await ref.read(themeStateNotifierProvider.notifier).removeThemeData();
+```
+
+---
+
+## Preview Pattern (`save: false`)
+
+Use `save: false` for live preview before the user confirms the choice:
+
+```dart
+// Show live preview (not persisted):
+notifier.setThemeData(iosThemeData: IosDarkThemeData(), save: false);
+
+// Commit only after user confirms:
+await notifier.setThemeData(iosThemeData: IosDarkThemeData(), save: true);
+```
+
+---
+
+## Reading Theme in Widgets
+
+```dart
+// Via Riverpod (rebuilds widget on change):
+final themeData = ref.watch(themeStateNotifierProvider);
+
+// Via IosTheme inherited widget (no Riverpod needed, reads current tree value):
+final theme = IosTheme.of(context);
+final primaryColor = theme.defaultLabelColors.primary;
+```
+
+Prefer `IosTheme.of(context)` for theme-driven styling inside widgets — it does not require a `WidgetRef`.
+
+---
+
+## Dark/Light Mode Toggle Widget
+
+```dart
+ThemeRowWidget(
+  state: null,               // reads initial value from IosTheme.of(context)
+  displayDivider: false,
+  label: 'Dark Mode',
+  description: null,
+  onPressed: (newTheme) {
+    TapOnDarkModeSettings(themeData: newTheme).track(context: context);
+  },
+)
+```
+
+---
+
+## Storage Format
+
+Theme is stored as `runtimeType.toString()` in SharedPreferences:
+- `IosLightThemeData` → stored as `'IosLightThemeData'`
+- `IosDarkThemeData`  → stored as `'IosDarkThemeData'`
+- Key: `'iosThemeData'` (prod) / `'iosThemeDataDebug'` (debug)
+
+---
+
+## `themeStateNotifierProvider` — NOT autoDispose
+
+Theme is global app state. Do NOT change this provider to autoDispose — it must persist for the entire app lifetime.
+
+---
+
+## Forbidden Patterns
+
+- **Never** store theme preference directly in `SharedPreferences` — always use `SetThemeDataUsecase` or `ThemeStateNotifier.setThemeData()`.
+- **Never** access `IosLightThemeData` or `IosDarkThemeData` in widgets by importing them directly to make styling decisions — use `IosTheme.of(context)` instead, and pattern-match only when you need subclass-specific properties.
+- **Never** add a third theme subclass to `ThemeRepositoryImpl` without also updating the `switch` pattern in `getThemeData()` — unrecognized strings return `null`.
+- **Never** make `themeStateNotifierProvider` autoDispose — this would drop the user's theme preference on navigation.
+- **Never** call `setThemeData(save: true)` during a live preview loop — call `save: false` during preview, then `save: true` only once on confirmation.

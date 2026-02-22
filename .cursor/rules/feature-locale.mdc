@@ -1,0 +1,94 @@
+---
+description: Rules for the locale feature in flutter_core_modules — locale persistence, use cases, repository, and how to extend or consume locale in a consuming app. Apply when working with locale or language selection code.
+alwaysApply: false
+globs: ["lib/src/features/locale/**/*.dart"]
+---
+
+# Feature: Locale — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| Persist locale to SharedPreferences | ✅ `SetLocaleUsecase` — do NOT reimplement |
+| Read persisted locale (sync) | ✅ `GetLocaleUsecase` — do NOT reimplement |
+| Remove persisted locale (reset to system) | ✅ `RemoveLocaleUsecase` — do NOT reimplement |
+| Debug/prod key separation | ✅ `DatabaseKeys.locale` — automatic |
+| Reactive locale `StateNotifier` | ❌ Not in package — implement in consuming app following `ThemeStateNotifier` pattern |
+| Locale picker UI | ❌ Not in package — implement in consuming app |
+
+**Before adding locale-related code, check if the above use cases already satisfy the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/locale/
+├── domain/
+│   ├── repositories/locale_repository.dart      # abstract LocaleRepository
+│   └── usecases/
+│       ├── get_locale_usecase.dart
+│       ├── set_locale_usecase.dart
+│       └── remove_locale_usecase.dart
+└── data/
+    └── repositories/locale_repository.dart      # LocaleRepositoryImpl + provider
+```
+
+There is **no `presentation/` layer** — locale has no UI in this package.
+
+---
+
+## Correct Usage Patterns
+
+### Reading locale on app start (sync)
+```dart
+// Read once; null means user has not selected a locale (use system locale)
+final savedLocale = ref.read(getLocaleUsecaseProvider)(); // Locale?
+```
+
+### Persisting a locale change
+```dart
+final setLocale = ref.read(setLocaleUsecaseProvider);
+await setLocale(locale: const Locale('pt', 'BR'));
+```
+
+### Resetting to system locale
+```dart
+await ref.read(removeLocaleUsecaseProvider)();
+```
+
+### Wiring into CupertinoApp / MaterialApp
+```dart
+CupertinoApp(
+  locale: savedLocale,       // null = let the OS decide
+  supportedLocales: const [Locale('en'), Locale('pt', 'BR')],
+  localizationsDelegates: const [...],
+)
+```
+
+### Reactive locale (consuming app, not this package)
+Follow the `ThemeStateNotifier` pattern — create a `LocaleStateNotifier extends SafeStateNotifier<Locale?>` in the consuming app that wraps the use cases.
+
+---
+
+## Forbidden Patterns
+
+- **Never** store locale directly in `SharedPreferences` outside of `LocaleRepositoryImpl` — always use the use cases.
+- **Never** hardcode the SharedPreferences key string; use `DatabaseKeys.locale.key`.
+- **Never** import `LocaleRepositoryImpl` directly in presentation code; use `getLocaleUsecaseProvider`, `setLocaleUsecaseProvider`, or `removeLocaleUsecaseProvider`.
+- **Never** add a reactive `StateNotifier` to this package for locale — if needed, implement it in the consuming app.
+
+---
+
+## Adding a New Locale
+
+No code changes are needed in this feature. The repository stores any `Locale` instance (any language code + optional country code). Just pass the desired `Locale` to `SetLocaleUsecase`.
+
+---
+
+## Storage Format
+
+- `Locale('en')` → stored as `['en']`
+- `Locale('pt', 'BR')` → stored as `['pt', 'BR']`
+- Key: `'locale'` (prod) / `'localeDebug'` (debug)

@@ -1,0 +1,312 @@
+---
+description: Step-by-step guide for implementing new feature modules in flutter_core_modules. Covers file placement, naming conventions, provider wiring, the GetStateNotifier fetch pattern, CacheBoolStateNotifier settings pattern, and barrel export requirements. Apply when creating or extending any feature under lib/src/features/.
+alwaysApply: false
+globs: ["lib/src/features/**/*.dart"]
+---
+
+# Feature Development Rules — flutter_core_modules
+
+## File Placement
+
+Every feature lives under `lib/src/features/<feature-name>/` with this structure:
+
+```
+<feature>/
+├── domain/
+│   ├── repositories/<feature>_repository.dart      # abstract class
+│   ├── data_sources/<feature>_data_source.dart      # abstract class (if remote)
+│   ├── entities/<entity>.dart                       # domain models
+│   ├── usecases/<verb>_<noun>_usecase.dart          # one file per operation
+│   └── failures/<feature>_failure.dart              # sealed class (if custom)
+├── data/
+│   ├── repositories/<feature>_repository.dart       # impl + provider
+│   └── data_sources/<concrete>_data_source.dart     # impl + provider (if remote)
+└── presentation/
+    ├── notifiers/<noun>_state_notifier.dart          # SafeStateNotifier subclass
+    ├── setup/<sdk>/<sdk>.dart                        # SDK init (if needed)
+    ├── config/<config>.dart                          # config helpers (if needed)
+    ├── providers/<thing>.dart                        # derived providers (if needed)
+    └── widgets/<widget>.dart                         # feature widgets (if needed)
+```
+
+## Naming Conventions
+
+| Thing | Pattern | Example |
+|---|---|---|
+| Repository interface | `abstract class FooRepository` | `LocaleRepository` |
+| Repository implementation | `class FooRepositoryImpl` | `LocaleRepositoryImpl` |
+| Data source interface | `abstract class FooDataSource` | `StorageRemoteDataSource` |
+| Data source implementation | `class ConcreteNameDataSource` | `FirebaseStorageRemoteDataSource` |
+| Use case class | `class VerbNounUsecase` | `GetLocaleUsecase`, `SetThemeDataUsecase` |
+| Notifier class | `class NounStateNotifier` | `ThemeStateNotifier`, `CustomerInfoStateNotifier` |
+| Repository provider | `fooRepositoryProvider` | `localeRepositoryProvider` |
+| Use case provider | `getEntityUsecaseProvider` | `getLocaleUsecaseProvider` |
+| Notifier provider | `nounStateNotifierProvider` | `themeStateNotifierProvider` |
+| Family args class | `FooFamilyArgs` | `GetDownloadUrlFamilyArgs` |
+
+## Domain Repository — Required Shape
+
+```dart
+abstract class FooRepository {
+  const FooRepository();
+
+  // Sync reads return nullable T
+  Foo? getFoo();
+
+  // Writes/deletes return Future<bool>
+  Future<bool> setFoo({required Foo foo});
+  Future<bool> removeFoo();
+
+  // Fallible async operations return Either<Failure, T>
+  Future<Either<FooFailure, Foo>> fetchFooFromRemote({required String id});
+}
+```
+
+## Use Case — Required Shape
+
+```dart
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+
+import '../../data/repositories/foo_repository.dart'; // data provider import
+import '../repositories/foo_repository.dart';          // domain interface
+
+class GetFooUsecase {
+  final FooRepository _repository;
+  const GetFooUsecase({required FooRepository repository}) : _repository = repository;
+
+  Foo? call() => _repository.getFoo();
+}
+
+final getFooUsecaseProvider = Provider.autoDispose<GetFooUsecase>(
+  (ref) => GetFooUsecase(repository: ref.read(fooRepositoryProvider)),
+);
+```
+
+## Data Repository — Required Shape
+
+```dart
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter/foundation.dart';
+
+class FooRepositoryImpl extends FooRepository {
+  final SharedPreferences _sharedPreferences;
+  const FooRepositoryImpl({required SharedPreferences sharedPreferences})
+      : _sharedPreferences = sharedPreferences;
+
+  @override
+  Foo? getFoo() => switch (_sharedPreferences.getString(DatabaseKeys.foo.key)) {
+    null => null,
+    final value => Foo.fromString(value),
+  };
+}
+
+enum DatabaseKeys {
+  foo;
+  String get key => kDebugMode ? '${name}Debug' : name; // REQUIRED debug suffix
+}
+
+final fooRepositoryProvider = Provider.autoDispose<FooRepository>(
+  (ref) => FooRepositoryImpl(sharedPreferences: ref.read(sharedPreferencesProvider)),
+);
+```
+
+## Notifier Patterns
+
+### Pattern A: Async Fetch (GetStateNotifier)
+
+For data fetched from a remote source (Firebase, HTTP):
+
+```dart
+import 'package:hooks_riverpod/legacy.dart';
+import 'package:flutter/cupertino.dart' hide State;
+
+class FooStateNotifier extends GetStateNotifier<FooFailure, FooEntity> {
+  final GetFooUsecase _usecase;
+  final String id;
+
+  FooStateNotifier({required this.id, required GetFooUsecase usecase})
+      : _usecase = usecase;
+
+  @override
+  Future<Either<FooFailure, FooEntity>> forwardedGet() => _usecase(id: id);
+}
+
+class FooFamilyArgs {
+  final String id;
+  const FooFamilyArgs({required this.id});
+}
+
+final fooStateNotifierProvider = StateNotifierProvider.autoDispose
+    .family<FooStateNotifier, State<FooFailure, FooEntity>, FooFamilyArgs>(
+      (ref, args) {
+        final notifier = FooStateNotifier(
+          id: args.id,
+          usecase: ref.read(getFooUsecaseProvider),
+        );
+        WidgetsBinding.instance.addPostFrameCallback((_) => notifier.lazyGet());
+        return notifier;
+      },
+    );
+```
+
+### Pattern B: Persisted Boolean (CacheBoolStateNotifier)
+
+For boolean app settings persisted to SharedPreferences:
+
+```dart
+import 'package:hooks_riverpod/legacy.dart';
+import 'package:flutter/foundation.dart';
+
+const _key = 'myFeatureEnabled';
+const kDefaultMyFeature = false;
+
+String myFeatureKey() => kDebugMode ? '${_key}Debug' : _key;
+
+class MyFeatureStateNotifier extends CacheBoolStateNotifier {
+  MyFeatureStateNotifier({
+    required super.getBoolUsecase,
+    required super.setBoolUsecase,
+    required super.removeCacheUsecase,
+    super.initialData = kDefaultMyFeature,
+  }) : super(key: myFeatureKey());
+}
+
+final myFeatureStateNotifierProvider =
+    StateNotifierProvider<MyFeatureStateNotifier, bool>(
+      (ref) => MyFeatureStateNotifier(
+        getBoolUsecase: ref.read(getBoolUsecaseProvider),
+        setBoolUsecase: ref.read(setBoolUsecaseProvider),
+        removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
+      ),
+    );
+```
+
+### Pattern C: Simple State (SafeStateNotifier)
+
+For non-boolean state read synchronously and updated via actions:
+
+```dart
+import 'package:hooks_riverpod/legacy.dart';
+
+class FooStateNotifier extends SafeStateNotifier<FooData?> {
+  final GetFooUsecase _get;
+  final SetFooUsecase _set;
+
+  FooStateNotifier({required GetFooUsecase get, required SetFooUsecase set})
+      : _get = get, _set = set,
+        super(get()); // synchronous initial state
+
+  Future<bool> set({required FooData data}) async {
+    final ok = await _set(data: data);
+    if (ok) state = data;
+    return ok;
+  }
+}
+
+final fooStateNotifierProvider =
+    StateNotifierProvider<FooStateNotifier, FooData?>(
+      (ref) => FooStateNotifier(
+        get: ref.read(getFooUsecaseProvider),
+        set: ref.read(setFooUsecaseProvider),
+      ),
+    );
+```
+
+## Caching (forwardedCachedGet)
+
+For features that fetch remote data and want transparent local caching, use the core helper from `fowarded_cache_functions.dart`:
+
+```dart
+// In the repository implementation:
+Future<Either<StorageFailure, MyData>> getData({...}) =>
+    forwardedCachedGet<StorageFailure, MyData>(
+      path: path,
+      key: const JsonCacheKey(), // or UrlCacheKey for URLs
+      invalidateCacheBefore: invalidateCacheBefore,
+      invalidateCacheDuration: invalidateCacheDuration,
+      getFromRemote: remoteDataSource.getData,
+      getFromLocal: localDataSource.getJson,
+      setLocal: localDataSource.setJson,
+      setSavedAtLocal: localDataSource.setSavedAt,
+      emptyCacheFailure: const EmptyCacheStorageFailure(),
+      unidentifiedFailure: const UnidentifiedStorageFailure(),
+      localDataSource: localDataSource,
+    );
+```
+
+## Widget — HookConsumerWidget Pattern
+
+All feature widgets use `HookConsumerWidget`:
+
+```dart
+class FooWidget extends HookConsumerWidget {
+  final String id;
+  const FooWidget({required this.id, super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final args = useMemoized(() => FooFamilyArgs(id: id), [id]);
+    final state = ref.watch(fooStateNotifierProvider(args));
+
+    useSafeEffect(() {
+      ref.read(fooStateNotifierProvider(args).notifier).lazyGet();
+      return () {};
+    }, [args]);
+
+    return switch (state) {
+      StartedState()                        => const SizedBox.shrink(),
+      LoadInProgressState()                 => const CupertinoActivityIndicator(),
+      LoadSuccessState(value: final data)   => Text(data.toString()),
+      LoadFailureState()                    => ErrorIndicatorWidget(
+          retryCallback: () => ref.read(fooStateNotifierProvider(args).notifier).get(),
+          label: 'Error',
+          retryLabel: 'Retry',
+          axis: Axis.vertical,
+          iconWidget: null,
+        ),
+    };
+  }
+}
+```
+
+## Barrel Export Requirement
+
+After creating any public file, add it to `lib/flutter_core_modules.dart`:
+
+```dart
+// Add exports in the appropriate section:
+export './src/features/foo/domain/repositories/foo_repository.dart';
+export './src/features/foo/domain/usecases/get_foo_usecase.dart';
+export './src/features/foo/data/repositories/foo_repository.dart';
+export './src/features/foo/presentation/notifiers/foo_state_notifier.dart';
+```
+
+Order within the file: core exports first, then features alphabetically.
+
+## Analytics Integration
+
+Every significant user action must track an analytics event. Add event classes to `tap_on_events.dart` or a feature-specific events file:
+
+```dart
+// In tap_on_events.dart:
+class TapOnMyFeatureButton extends EventEntity {
+  const TapOnMyFeatureButton();
+  @override
+  Map<String, Object>? get properties => const {};
+}
+
+// In widget or notifier:
+TapOnMyFeatureButton().track(context: context);
+```
+
+## SharedPreferences Keys — Forbidden Patterns
+
+```dart
+// FORBIDDEN — hardcoded key without debug suffix
+const String myKey = 'isEnabled';
+_prefs.getBool(myKey);
+
+// REQUIRED — always use debug-aware key
+String get myKey => kDebugMode ? 'isEnabledDebug' : 'isEnabled';
+_prefs.getBool(myKey);
+```

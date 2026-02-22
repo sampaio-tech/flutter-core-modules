@@ -1,0 +1,285 @@
+---
+description: Rules for how external apps should consume flutter_core_modules — app initialization sequence, required providers, how to use feature notifiers, storage widgets, route setup, and settings widgets. Apply when integrating this package into a consuming Flutter app.
+alwaysApply: false
+---
+
+# Package Usage Rules — flutter_core_modules
+
+This document describes how to correctly integrate `flutter_core_modules` into a consuming Flutter application.
+
+## App Initialization Sequence
+
+`main()` must execute in this exact order:
+
+```dart
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 1. Firebase Core (required for Remote Config, Analytics, Storage, Crashlytics)
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 2. Firebase Remote Config (gates analytics provider initialization)
+  final remoteConfig = await FirebaseRemoteConfigCore.init();
+
+  // 3. SharedPreferences singleton (required before any provider reads it)
+  await SharedPreferencesInstance.getInstanceSharedPreferences();
+
+  // 4. DotEnv.init() — loads .env + initializes all analytics SDKs + RevenueCat
+  await DotEnv.init(remoteConfig);
+
+  // 5. Optional: HTTP override for dev certificate bypass
+  // HttpOverrides.global = CertificateHttpOverrides();
+
+  // 6. App entry with ProviderScope
+  runApp(
+    ProviderScope(
+      child: MyApp(),
+    ),
+  );
+}
+```
+
+**Critical:** `DotEnv.init()` must receive the already-initialized `FirebaseRemoteConfig` instance because analytics providers check Remote Config flags before initializing.
+
+## Required .env File
+
+The `.env` file must be present in the app root and listed in `pubspec.yaml` assets. Keys used by this package:
+
+```env
+# Analytics (all optional — omit to disable that provider)
+STATSIG_CLIENT_SDK_KEY=client-...
+MIXPANEL_TOKEN=...
+POSTHOG_TOKEN=phc_...
+AMPLITUDE_TOKEN=...
+CLARITY_PROJECT_ID=...
+
+# Revenue (required if using revenue feature)
+REVENUECAT_PROJECT_APPLE_API_KEY=appl_...
+REVENUECAT_PROJECT_GOOGLE_API_KEY=goog_...
+```
+
+## Theme Setup
+
+Use `ThemeStateNotifier` to persist and apply theme across sessions:
+
+```dart
+// In your app widget:
+final themeData = ref.watch(themeStateNotifierProvider);
+
+IosTheme(
+  data: themeData ?? IosLightThemeData(), // default to light
+  child: MyApp(),
+)
+```
+
+To toggle theme from settings:
+```dart
+// Reads state, saves to SharedPreferences, updates provider:
+ref.read(themeStateNotifierProvider.notifier).setThemeData(iosThemeData: IosDarkThemeData());
+```
+
+Or use the pre-built widget:
+```dart
+ThemeRowWidget(
+  state: null, // use internal state from themeStateNotifierProvider
+  displayDivider: false,
+  label: 'Dark Mode',
+  description: null,
+)
+```
+
+## Revenue / Paywall Integration
+
+Initialize `CustomerInfoStateNotifier` and listen for subscription changes on app start:
+
+```dart
+// In your root widget's initState or useSafeEffect:
+final notifier = ref.read(customerInfoStateNotifierProvider.notifier);
+await notifier.get();
+await notifier.listen();
+```
+
+Check premium status reactively:
+```dart
+final isPremium = ref.watch(isPremiumCustomerProvider);
+```
+
+Present paywall with full analytics tracking:
+```dart
+await presentPaywallForwarded(
+  context: context,
+  event: TapOnGetPremiumButton(),
+  enable: true,
+  featureLocked: true,
+  onTap: () { /* action if already premium */ },
+);
+```
+
+## Storage — Display Images from Firebase Storage
+
+```dart
+// Raster image (PNG/JPEG):
+ImageNetworkFromStorageWidget(
+  path: 'images/logo.png',  // Firebase Storage path
+  width: 48,
+  height: 48,
+  invalidateCacheDuration: const Duration(days: 7),
+  progressIndicatorWidget: const CupertinoActivityIndicator(),
+  errorWidget: const Icon(CupertinoIcons.photo),
+)
+
+// SVG image:
+SvgFromStorageWidget(
+  path: 'icons/menu.svg',
+  width: 24,
+  height: 24,
+  color: theme.defaultLabelColors.primary,
+  invalidateCacheDuration: const Duration(days: 1),
+)
+```
+
+Both widgets automatically cache download URLs in SharedPreferences and respect `invalidateCacheBefore` / `invalidateCacheDuration`.
+
+## Settings Widgets
+
+### Boolean Toggle (persisted to SharedPreferences)
+
+```dart
+CacheBoolRowWidget(
+  stateNotifierProvider: hapticFeedbackStateNotifierProvider,
+  displayDivider: true,
+  leftWidget: AppIconWidget.icon(iconData: CupertinoIcons.phone_badge_plus),
+  title: 'Haptic Feedback',
+  description: null,
+  onPressed: (newState) {
+    TapOnVibrationFeedbackSettings(enable: newState).track(context: context);
+  },
+  onChanged: null,
+)
+```
+
+### Simple Toggle (not persisted)
+
+```dart
+SwitchRowWidget(
+  state: myValueNotifier,         // null = uses internal hook state
+  initialData: true,
+  displayDivider: false,
+  leftWidget: null,
+  title: 'Enable Feature',
+  description: 'Optional subtitle',
+  onPressed: (newState) { /* handle */ },
+  onChanged: null,
+)
+```
+
+## Navigation Setup (ShellRouteWidget)
+
+Implement tabs by extending `NavigationTab`:
+
+```dart
+class HomeTab extends NavigationTab {
+  const HomeTab() : super(name: 'home', icon: CupertinoIcons.house, initialTab: true);
+
+  @override
+  String label(BuildContext context) => 'Home';
+
+  @override
+  Map<String, Widget Function(BuildContext)>? get routes => {
+    '/': (_) => const HomeScreen(),
+  };
+
+  @override
+  List<NavigatorObserver> navigatorObservers(BuildContext context) =>
+      defaultNavigatorObservers(context); // analytics integration
+}
+
+// In your app:
+ShellRouteWidget(tabs: const [HomeTab(), SettingsTab()])
+```
+
+Tapping the active tab pops to root. System back button pops within the tab.
+
+## LabelRowWidget — List Rows
+
+```dart
+// Simple info row (copies on tap):
+LabelRowWidget(
+  displayDivider: true,
+  title: 'Version',
+  description: null,
+  label: '1.0.0',
+  toastMessage: 'Copied!',
+)
+
+// Link row (opens WebView):
+LabelRowWidget.link(
+  displayDivider: false,
+  title: 'Privacy Policy',
+  description: 'https://example.com/privacy',
+  label: null,
+  toastMessage: 'Link copied',
+)
+
+// Action button row:
+LabelRowWidget.button(
+  displayDivider: true,
+  title: 'Rate App',
+  description: null,
+  label: null,
+  displayChevronRight: true,
+  onPressed: ({required context, ...}) {
+    ref.read(inAppReviewStateNotifierProvider.notifier).requestReview();
+  },
+  onLongPress: null,
+)
+
+// Destructive action:
+LabelRowWidget.redButton(
+  displayDivider: false,
+  title: 'Delete Account',
+  description: null,
+  label: null,
+  onPressed: ({required context, ...}) { /* confirm + delete */ },
+  onLongPress: null,
+)
+```
+
+## In-App Review
+
+```dart
+// Request review (shows native dialog if available):
+await ref.read(inAppReviewStateNotifierProvider.notifier).requestReview(
+  requestReviewCallback: () => TapOnReviewButton().track(context: context),
+);
+
+// Open store listing (fallback):
+await ref.read(inAppReviewStateNotifierProvider.notifier).openStoreListing();
+
+// Feedback email:
+await ref.read(launchFeedbackStateNotifierProvider.notifier).launch(
+  appName: 'My App',
+  emailAddress: FirebaseRemoteConfigCore.feedbackEmail,
+);
+```
+
+## Error Indicators
+
+```dart
+// Vertical layout (full screen):
+ErrorIndicatorWidget(
+  retryCallback: () => ref.read(myProvider.notifier).get(),
+  label: 'Something went wrong',
+  retryLabel: 'Try Again',
+  axis: Axis.vertical,
+  iconWidget: null,
+)
+
+// Horizontal layout (inline):
+CheckInternetErrorIndicatorWidget(
+  retryCallback: () => ref.read(myProvider.notifier).get(),
+  label: 'Check your connection',
+  retryLabel: 'Retry',
+  axis: Axis.horizontal,
+)
+```

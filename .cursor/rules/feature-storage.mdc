@@ -1,0 +1,158 @@
+---
+description: Rules for the storage feature in flutter_core_modules — Firebase Storage integration, SharedPreferences caching, GetDownloadUrlStateNotifier, GetJsonStateNotifier, ImageNetworkFromStorageWidget, SvgFromStorageWidget, and cache invalidation. Apply when loading files from Firebase Storage, using storage widgets, or implementing storage caching.
+alwaysApply: false
+globs: ["lib/src/features/storage/**/*.dart"]
+---
+
+# Feature: Storage — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| Firebase Storage download URL fetch | ✅ `GetDownloadUrlUsecase` |
+| Firebase Storage JSON fetch | ✅ `GetJsonUsecase` |
+| Transparent SharedPreferences caching | ✅ `SharedPreferencesCacheLocalDataSource` |
+| Cache invalidation by date cutoff | ✅ `invalidateCacheBefore: DateTime` parameter |
+| Cache invalidation by TTL duration | ✅ `invalidateCacheDuration: Duration` parameter |
+| Display raster image from Storage | ✅ `ImageNetworkFromStorageWidget` |
+| Display SVG from Storage | ✅ `SvgFromStorageWidget` |
+| Debug/prod cache key separation | ✅ `CacheKey.key` appends `_debug` in debug mode |
+| Firebase Storage file upload | ❌ Not in package — implement directly via `firebase_storage` |
+| Firebase Storage file deletion | ❌ Not in package — implement directly |
+| Alternative storage backends (S3, etc.) | ❌ Add a new `StorageRemoteDataSource` implementation |
+
+**Before fetching or displaying Firebase Storage content, check whether the above widgets and notifiers already cover the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/storage/
+├── domain/
+│   ├── repositories/storage_repository.dart           # abstract class with built-in cache logic
+│   ├── data_sources/storage_remote_data_source.dart
+│   └── usecases/ (GetDownloadUrlUsecase, GetJsonUsecase)
+├── data/
+│   ├── repositories/firebase_storage_repository.dart
+│   └── data_sources/firebase_storage_remote_data_source.dart
+└── presentation/
+    ├── notifiers/
+    │   ├── get_download_url_state_notifier.dart        # family provider
+    │   └── get_json_state_notifier.dart                # family provider
+    └── widgets/
+        ├── image_network_from_storage_widget.dart
+        └── svg_from_storage_widget.dart
+```
+
+---
+
+## Displaying Images and SVGs
+
+### Raster image (PNG/JPEG)
+```dart
+ImageNetworkFromStorageWidget(
+  path: 'images/user_avatar.png',       // Firebase Storage path
+  width: 48,
+  height: 48,
+  fit: BoxFit.cover,
+  invalidateCacheDuration: const Duration(days: 7),
+  progressIndicatorWidget: const CupertinoActivityIndicator(),
+  errorWidget: const Icon(CupertinoIcons.person_circle),
+)
+```
+
+### SVG icon
+```dart
+SvgFromStorageWidget(
+  path: 'icons/category_sport.svg',
+  width: 24,
+  height: 24,
+  color: IosTheme.of(context).defaultLabelColors.primary,
+  invalidateCacheDuration: const Duration(days: 30),
+)
+```
+
+### Force refresh after a content deploy
+```dart
+ImageNetworkFromStorageWidget(
+  path: 'images/hero_banner.png',
+  invalidateCacheBefore: DateTime(2025, 6, 1), // invalidate anything cached before this date
+)
+```
+
+---
+
+## Cache Invalidation Rules
+
+| Parameter | Behavior |
+|---|---|
+| Both `null` | Cache is only invalidated if it does not exist (first fetch only) |
+| `invalidateCacheDuration: Duration` | Cache is stale if saved more than `duration` ago |
+| `invalidateCacheBefore: DateTime` | Cache is stale if saved before this date |
+
+**Always specify one of these for content that changes** — omitting both means the cache is permanent until the app is reinstalled.
+
+---
+
+## Fetching JSON from Firebase Storage
+
+```dart
+class MyConfigNotifier extends GetStateNotifier<StorageFailure, MyConfig> {
+  @override
+  Future<Either<StorageFailure, MyConfig>> forwardedGet() =>
+      ref.read(getJsonUsecaseProvider)(
+        path: 'config/app_config.json',
+        invalidateCacheDuration: const Duration(hours: 6),
+        invalidateCacheBefore: null,
+      ).then((result) => result.fold(
+        Left.new,
+        (json) => Right(MyConfig.fromJson(json as Map<String, dynamic>)),
+      ));
+}
+```
+
+---
+
+## Manual Download URL Fetch
+
+```dart
+final familyArgs = GetDownloadUrlFamilyArgs(
+  path: 'documents/report.pdf',
+  invalidateCacheDuration: const Duration(hours: 1),
+);
+final state = ref.watch(getDownloadUrlStateNotifierProvider(familyArgs));
+
+switch (state) {
+  LoadSuccessState(value: final url) => launchUrlString(url),
+  LoadFailureState()                 => showError(),
+  _                                  => showLoading(),
+}
+```
+
+---
+
+## `StorageRepository` — Abstract But Not Empty
+
+Unlike other repositories, `StorageRepository` contains the full cache-or-fetch logic via `forwardedCachedGet`. Subclasses only inject `localDataSource` and `remoteDataSource`. **Do NOT duplicate this logic** — always subclass `StorageRepository` for new storage backends.
+
+---
+
+## `ImageNetworkFromStorageWidget` — `animationDuration` vs `fadeDuration`
+
+When `animationDuration > Duration.zero`, the widget disables `fadeDuration` on the underlying image to avoid a double-fade effect. Only set one or the other, not both.
+
+---
+
+## Forbidden Patterns
+
+- **Never** call `FirebaseStorage.ref(path).getDownloadURL()` directly in widgets — use `ImageNetworkFromStorageWidget`, `SvgFromStorageWidget`, or `getDownloadUrlStateNotifierProvider`.
+- **Never** omit both `invalidateCacheBefore` and `invalidateCacheDuration` for content that changes — the cache will never refresh.
+- **Never** call `ref.watch(getDownloadUrlStateNotifierProvider(args))` with inline `GetDownloadUrlFamilyArgs(...)` — wrap it in `useMemoized` first to prevent recreating args (and resetting the notifier) on every rebuild:
+  ```dart
+  final args = useMemoized(() => GetDownloadUrlFamilyArgs(path: path), [path]);
+  final state = ref.watch(getDownloadUrlStateNotifierProvider(args));
+  ```
+- **Never** add Firebase Storage upload or delete logic to this feature — those operations are outside the scope of this package.
+- **Never** create a new `CacheKey` subclass with the same prefix as `UrlCacheKey` (`'url'`) or `JsonCacheKey` (`'json'`) — this will cause cache collisions.

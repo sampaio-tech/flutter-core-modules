@@ -1,0 +1,130 @@
+---
+description: Rules for the route feature in flutter_core_modules — ShellRouteWidget, NavigationTab, navigatiorKeyProvider, and defaultNavigatorObservers. Apply when setting up tab navigation, implementing a navigation shell, or adding analytics route observers.
+alwaysApply: false
+globs: ["lib/src/features/route/**/*.dart"]
+---
+
+# Feature: Route — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| iOS tab scaffold (`CupertinoTabScaffold`) | ✅ `ShellRouteWidget` |
+| Pop-to-root on active tab double-tap | ✅ Built into `ShellRouteWidget` |
+| System back handling | ✅ `PopScope` in `ShellRouteWidget` |
+| Per-tab isolated navigator | ✅ `CupertinoTabView` per tab |
+| Stable `GlobalKey<NavigatorState>` per tab | ✅ `navigatiorKeyProvider` (family provider) |
+| Analytics screen tracking (Firebase + PostHog) | ✅ `defaultNavigatorObservers()` |
+| Deep-link / `go_router` integration | ❌ Not in package — implement in consuming app |
+| Bottom tab badge / notification dot | ❌ Not in package — extend `NavigationTab` |
+| Custom tab bar beyond `activeColor` | ❌ Uses `CupertinoTabBar` — only `activeColor` is configurable |
+
+**Before building navigation infrastructure, verify whether `ShellRouteWidget` already covers the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/route/
+└── presentation/
+    ├── utils/navigation_observers.dart     # defaultNavigatorObservers()
+    └── widgets/shell_route_widget.dart     # ShellRouteWidget, NavigationTab, navigatiorKeyProvider
+```
+
+This feature is **presentation-only** — no domain or data layers.
+
+---
+
+## Implementing a Tab
+
+```dart
+class HomeTab extends NavigationTab {
+  const HomeTab() : super(
+    name: 'home',          // unique string identifier
+    icon: CupertinoIcons.house_fill,
+    initialTab: true,      // only one tab should have initialTab: true
+  );
+
+  @override
+  String label(BuildContext context) => AppLocalizations.of(context)!.home;
+
+  @override
+  Map<String, Widget Function(BuildContext)>? get routes => {
+    '/': (context) => const HomeScreen(),
+    '/detail': (context) => const DetailScreen(),
+  };
+
+  @override
+  List<NavigatorObserver> navigatorObservers(BuildContext context) =>
+      defaultNavigatorObservers(context); // always include for analytics
+}
+```
+
+Rules for `NavigationTab` subclasses:
+- `name` must be unique across all tabs in the app
+- Only one tab per `ShellRouteWidget` should have `initialTab: true`
+- Always override `navigatorObservers` to return `defaultNavigatorObservers(context)` unless you have a specific reason not to track screen views
+
+---
+
+## Composing the Shell
+
+```dart
+// In your root HookConsumerWidget body:
+ShellRouteWidget(
+  tabs: const [HomeTab(), SettingsTab()],
+  activeColor: CupertinoColors.activeBlue, // optional
+)
+```
+
+---
+
+## `navigatiorKeyProvider` — Spelling Is Intentional
+
+The provider is spelled `navigatior` (not `navigator`) — this is the existing codebase spelling and must not be "fixed":
+
+```dart
+final navigatiorKeyProvider =
+    Provider.family<GlobalKey<NavigatorState>, NavigationTab?>(...);
+```
+
+Access a tab's key from outside the tab context:
+```dart
+final key = ProviderScope.containerOf(context).read(navigatiorKeyProvider(homeTab));
+key.currentState?.pushNamed('/detail');
+```
+
+---
+
+## Analytics Screen Tracking
+
+`defaultNavigatorObservers()` returns `FirebaseAnalyticsObserver` and `PosthogObserver` when both:
+1. The respective `.env` token is present
+2. The Firebase Remote Config `enable_*` flag is `true`
+
+In debug mode or when SDKs are not initialized, it returns an empty list safely.
+
+**Always** return `defaultNavigatorObservers(context)` from `navigatorObservers()` in `NavigationTab` implementations unless there is an explicit reason to disable tracking.
+
+---
+
+## Pop-to-Root Behavior
+
+The shell handles pop-to-root **automatically** when the user taps the already-active tab. No additional code is needed. For programmatic pop-to-root:
+
+```dart
+final key = ProviderScope.containerOf(context).read(navigatiorKeyProvider(activeTab));
+key.currentState?.popUntil((route) => route.isFirst);
+```
+
+---
+
+## Forbidden Patterns
+
+- **Never** use a `GlobalKey<NavigatorState>` created outside of `navigatiorKeyProvider` for tab navigation — keyed instances must be stable across rebuilds and provided via Riverpod.
+- **Never** add `go_router` or deep-link routing inside this feature — implement that in the consuming app wrapping `ShellRouteWidget`.
+- **Never** create a tab with duplicate `name` values — this will cause `navigatiorKeyProvider` to return the same key for two different tabs.
+- **Never** omit `defaultNavigatorObservers(context)` from a tab's `navigatorObservers()` without justification — screen views will not be tracked in Firebase Analytics or PostHog.
+- **Never** rename `navigatiorKeyProvider` to fix the typo — it would be a breaking change.

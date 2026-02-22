@@ -1,0 +1,116 @@
+---
+description: Rules for the review feature in flutter_core_modules — InAppReviewStateNotifier, LaunchFeedbackStateNotifier, in-app review request, store listing, and feedback email. Apply when implementing rate-app flows, feedback buttons, or review/feedback UI.
+alwaysApply: false
+globs: ["lib/src/features/review/**/*.dart"]
+---
+
+# Feature: Review — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| Native in-app review dialog | ✅ `InAppReviewStateNotifier.requestReview()` |
+| Review availability check | ✅ `InAppReviewStateNotifier.isAvailable()` |
+| Open App Store / Play Store listing | ✅ `InAppReviewStateNotifier.openStoreListing()` |
+| Email feedback with auto-subject | ✅ `LaunchFeedbackStateNotifier.launch()` |
+| Feedback email from Remote Config | ✅ `FirebaseRemoteConfigCore.feedbackEmail` (key: `feedback_email`) |
+| Analytics events for review/feedback | ✅ `TapOnReviewButton`, `TapOnFeedbackButton`, `InAppReviewIsAvailable` |
+| Custom review request timing / frequency | ❌ Not in package — OS-controlled; implement logic in consuming app |
+
+**Before building review or feedback flows, confirm whether the above already covers the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/review/
+├── domain/
+│   ├── repositories/in_app_review_repository.dart
+│   └── usecases/ (IsAvailableUsecase, RequestReviewUsecase, OpenStoreListingUsecase)
+├── data/
+│   └── repositories/in_app_review_repository.dart   # InAppReviewRepositoryImpl
+└── presentation/
+    ├── providers/in_app_review.dart                  # inAppReviewProvider (SDK instance)
+    ├── config/launch_url.dart                        # canLaunchFeedback / launchFeedback
+    └── notifiers/
+        ├── in_app_review_state_notifier.dart         # state: bool (is available)
+        └── launch_feedback_state_notifier.dart       # state: bool (can launch)
+```
+
+---
+
+## Correct Usage Patterns
+
+### Request in-app review with analytics
+```dart
+await ref.read(inAppReviewStateNotifierProvider.notifier).requestReview(
+  requestReviewCallback: () => TapOnReviewButton().track(context: context),
+  isAvailableCallback: (isAvailable) =>
+      InAppReviewIsAvailable(isAvailable: isAvailable).track(context: context),
+);
+```
+
+### Check availability before showing a "Rate App" button
+```dart
+// On widget mount:
+useSafeEffect(() {
+  ref.read(inAppReviewStateNotifierProvider.notifier).isAvailable();
+  return () {};
+}, []);
+
+// In build:
+final canReview = ref.watch(inAppReviewStateNotifierProvider);
+if (canReview) { /* show button */ }
+```
+
+### Open store listing directly (e.g., as fallback)
+```dart
+await ref.read(inAppReviewStateNotifierProvider.notifier).openStoreListing();
+```
+
+### Feedback email button
+```dart
+await ref.read(launchFeedbackStateNotifierProvider.notifier).launch(
+  appName: 'My App',
+  // emailAddress: 'custom@example.com', // optional; defaults to Remote Config value
+);
+```
+
+---
+
+## `requestReview()` Flow
+
+1. Calls `isAvailable()` → fires `isAvailableCallback(bool)`
+2. If available: fires `requestReviewCallback()`, calls native review dialog
+3. Re-checks availability after (OS may disable further prompts)
+4. Fires `isAvailableCallback(bool)` again with updated state
+
+**Never** call `RequestReviewUsecase` directly — use `InAppReviewStateNotifier.requestReview()` to get the full callback and state update flow.
+
+---
+
+## Email Subject Format
+
+`launchFeedback()` builds the subject automatically:
+```
+My App | Version 2.1.0+42
+```
+
+The email address defaults to `FirebaseRemoteConfigCore.feedbackEmail`. Override only when needed by passing `emailAddress:`.
+
+---
+
+## `inAppReviewStateNotifierProvider` — NOT autoDispose
+
+This provider persists review eligibility state across screens. Do NOT change it to autoDispose.
+
+---
+
+## Forbidden Patterns
+
+- **Never** call `InAppReview.instance.requestReview()` directly — always use `InAppReviewStateNotifier.requestReview()`.
+- **Never** call `launchUrl(Uri.parse('mailto:...'))` directly for feedback — use `LaunchFeedbackStateNotifier.launch()` or `launchFeedback()` which auto-builds subject and email.
+- **Never** skip `isAvailableCallback` when analytics is configured — it enables tracking whether users can leave reviews.
+- **Never** hardcode the feedback email address — it is managed via Firebase Remote Config (`feedback_email` key).

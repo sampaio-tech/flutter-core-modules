@@ -1,0 +1,156 @@
+---
+description: Rules for the settings feature in flutter_core_modules — HapticFeedbackStateNotifier, WakelockStateNotifier, SwitchRowWidget, CacheBoolRowWidget, ThemeRowWidget. Apply when building settings screens, adding new boolean settings, or using settings toggle widgets.
+alwaysApply: false
+globs: ["lib/src/features/settings/**/*.dart"]
+---
+
+# Feature: Settings — Rules
+
+## What Is Already Implemented — Check Before Building
+
+| Capability | Status |
+|---|---|
+| Haptic feedback toggle (persisted) | ✅ `hapticFeedbackStateNotifierProvider` |
+| Prevent screen sleep / wakelock (persisted) | ✅ `wakelockStateNotifierProvider` |
+| Generic toggle row widget (not persisted) | ✅ `SwitchRowWidget` |
+| Toggle wired to any `CacheBoolStateNotifier` | ✅ `CacheBoolRowWidget` |
+| Dark / Light mode toggle row | ✅ `ThemeRowWidget` |
+| Auto-haptic on list row tap | ✅ Built into `LabelRowWidget.copyToClipboard` / `openLink` |
+| Notification permission settings | ❌ Not in package — use `app_settings` package |
+| Non-boolean persisted setting | ❌ Not in package — implement following `ThemeStateNotifier` pattern |
+
+**Before creating a new settings notifier or widget, verify whether the above already satisfies the requirement.**
+
+---
+
+## Layer Structure
+
+```
+lib/src/features/settings/
+└── presentation/
+    ├── notifiers/
+    │   ├── haptic_feedback_state_notifier.dart
+    │   └── wakelock_state_notifier.dart
+    └── widgets/
+        ├── switch_row_widget.dart
+        ├── cache_bool_row_widget.dart
+        └── theme_row_widget.dart
+```
+
+There is **no domain or data layer** — settings use the core `CacheBoolStateNotifier` directly.
+
+---
+
+## Adding a New Boolean Setting
+
+Extend `CacheBoolStateNotifier` with a unique key and default value:
+
+```dart
+class MyFeatureStateNotifier extends CacheBoolStateNotifier {
+  MyFeatureStateNotifier({required super.getBoolUsecase, required super.setBoolUsecase, required super.removeCacheUsecase})
+      : super(key: myFeatureKey(), defaultValue: true);
+}
+
+const _key = 'myFeature';
+String myFeatureKey() => kDebugMode ? '${_key}Debug' : _key;
+
+final myFeatureStateNotifierProvider =
+    StateNotifierProvider<MyFeatureStateNotifier, bool>(
+  (ref) => MyFeatureStateNotifier(
+    getBoolUsecase: ref.read(getBoolUsecaseProvider),
+    setBoolUsecase: ref.read(setBoolUsecaseProvider),
+    removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
+  ),
+);
+```
+
+Rules:
+- Key string must be unique across all `CacheBoolStateNotifier` subclasses
+- Always append `Debug` suffix in debug mode — use the pattern above
+- Provider must be `StateNotifierProvider` (NOT autoDispose) — settings must persist for the app lifetime
+
+---
+
+## Widget Usage
+
+### Persisted boolean toggle
+```dart
+CacheBoolRowWidget(
+  stateNotifierProvider: hapticFeedbackStateNotifierProvider,
+  displayDivider: true,
+  leftWidget: AppIconWidget.icon(iconData: CupertinoIcons.hand_tap),
+  title: 'Haptic Feedback',
+  description: null,
+  onPressed: (newState) {
+    TapOnVibrationFeedbackSettings(enable: newState).track(context: context);
+  },
+  onChanged: null,
+)
+```
+
+### Wakelock — apply immediately in callback
+```dart
+CacheBoolRowWidget(
+  stateNotifierProvider: wakelockStateNotifierProvider,
+  displayDivider: true,
+  leftWidget: AppIconWidget.icon(iconData: CupertinoIcons.brightness_solid),
+  title: 'Keep Screen On',
+  description: null,
+  onPressed: (newState) {
+    WakelockPlus.toggle(enable: newState); // apply immediately
+    TapOnPreventSleepSettings(enable: newState).track(context: context);
+  },
+  onChanged: null,
+)
+```
+
+> `WakelockStateNotifier` applies the wakelock **only** in its constructor, not when `set()` is called. Always call `WakelockPlus.toggle(enable:)` in `onPressed`.
+
+### Dark mode toggle
+```dart
+ThemeRowWidget(
+  state: null,               // reads initial value from IosTheme.of(context)
+  displayDivider: false,
+  label: 'Dark Mode',
+  description: null,
+  onPressed: (newTheme) {
+    TapOnDarkModeSettings(themeData: newTheme).track(context: context);
+  },
+)
+```
+
+### Non-persisted custom toggle
+```dart
+SwitchRowWidget(
+  state: null,               // uses internal hook state
+  initialData: true,
+  displayDivider: false,
+  leftWidget: null,
+  title: 'Feature X',
+  description: null,
+  onPressed: (newState) { /* handle */ },
+  onChanged: null,
+)
+```
+
+---
+
+## `hapticFeedbackStateNotifierProvider` — Auto-wired to List Rows
+
+`LabelRowWidget.copyToClipboard` and `LabelRowWidget.openLink` both read `hapticFeedbackStateNotifierProvider` automatically via `ProviderScope.containerOf(context)` before triggering haptic feedback. **No extra setup is needed** to get haptic feedback on list row taps.
+
+---
+
+## Provider Persistence Rules
+
+Both `hapticFeedbackStateNotifierProvider` and `wakelockStateNotifierProvider` are **NOT autoDispose**. Do NOT change them — they must survive for the entire app lifetime.
+
+---
+
+## Forbidden Patterns
+
+- **Never** write a boolean setting directly to `SharedPreferences` outside of `CacheBoolStateNotifier` — always go through the notifier.
+- **Never** use `SwitchRowWidget` for a setting that should be persisted — use `CacheBoolRowWidget` instead.
+- **Never** use an `autoDispose` provider for a settings notifier — settings must not be discarded.
+- **Never** add a non-boolean persisted setting to this feature — implement it following the `ThemeStateNotifier` pattern (not `CacheBoolStateNotifier`).
+- **Never** skip calling `WakelockPlus.toggle(enable:)` in the wakelock `onPressed` callback — the notifier's `set()` does not re-apply the wakelock at runtime.
