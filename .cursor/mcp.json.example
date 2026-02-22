@@ -1,10 +1,13 @@
 {
+  // Copy this file to .cursor/mcp.json and update the paths for your local setup.
+  // .cursor/mcp.json is git-ignored — each developer keeps their own copy.
+  //
+  // Dart MCP server docs: https://dart.dev/tools/dart-devtools
+  // Find your dart binary:  flutter/bin/cache/dart-sdk/bin/dart
   "mcpServers": {
     "dart": {
-      "command": "dart",
-      "args": [
-        "mcp-server"
-      ]
+      "command": "/path/to/flutter/bin/cache/dart-sdk/bin/dart",
+      "args": ["mcp-server"]
     }
   }
 }
