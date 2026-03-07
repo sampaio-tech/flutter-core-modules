@@ -36,3 +36,8 @@ migrate_working_dir/
 
 # Ralph Orchestrator config
 ralph.yml
+
+# Environment variables — never commit real secrets
+.env
+*.env
+!*.env.example
