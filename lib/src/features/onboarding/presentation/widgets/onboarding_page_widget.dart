@@ -76,16 +76,21 @@ class OnboardingPageWidget extends HookWidget {
       [featuresController, features],
     );
 
+    final isMounted = useIsMounted();
+
     useEffect(() {
       Future<void> startAnimations() async {
+        if (!isMounted()) return;
         headerController.forward();
         await Future<void>.delayed(const Duration(milliseconds: 400));
+        if (!isMounted()) return;
         featuresController.forward();
         await Future<void>.delayed(
           Duration(
             milliseconds: (featuresDuration.inMilliseconds * 0.4).round(),
           ),
         );
+        if (!isMounted()) return;
         buttonController.forward();
       }
 

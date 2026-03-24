@@ -26,7 +26,7 @@ class OnboardingFeatureItemWidget extends StatelessWidget {
         children: [
           if (iconData != null)
             Padding(
-              padding: const EdgeInsets.only(top: 2, right: 14),
+              padding: const EdgeInsetsDirectional.only(top: 2, end: 14),
               child: Icon(
                 iconData,
                 color: accentColor,
