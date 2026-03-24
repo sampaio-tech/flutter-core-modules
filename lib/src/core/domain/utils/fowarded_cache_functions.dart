@@ -65,23 +65,27 @@ Future<Either<F, T>> forwardedCachedHttpRequest<F, T>({
   required F emptyCacheFailure,
   required F unidentifiedFailure,
   required CacheLocalDataSource localDataSource,
+  bool isOffline = false,
   Future<dynamic> Function({required String path})? getFromLocal,
   Future<bool> Function({required String path, required dynamic value})?
   setLocal,
   Future<bool> Function({required CacheKey key, required String path})?
   setSavedAtLocal,
 }) async {
-  try {
-    Future<Either<F, T>> getFromCache() async {
-      final value =
-          await (getFromLocal?.call(path: path) ??
-              localDataSource.getJson(path: path));
-      if (value != null) {
-        return Right(fromJson(value));
-      }
-      return Left(emptyCacheFailure);
+  Future<Either<F, T>> getFromCache() async {
+    final value =
+        await (getFromLocal?.call(path: path) ??
+            localDataSource.getJson(path: path));
+    if (value != null) {
+      return Right(fromJson(value));
     }
+    return Left(emptyCacheFailure);
+  }
 
+  try {
+    if (isOffline) {
+      return getFromCache();
+    }
     final invalidateCache = await localDataSource.invalidateCacheRule(
       key: key,
       path: path,
@@ -110,6 +114,6 @@ Future<Either<F, T>> forwardedCachedHttpRequest<F, T>({
     }
     return getFromCache();
   } catch (err) {
-    return Left(unidentifiedFailure);
+    return getFromCache();
   }
 }
