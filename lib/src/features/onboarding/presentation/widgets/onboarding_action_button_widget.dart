@@ -4,20 +4,38 @@ import 'package:ios_design_system/ios_design_system.dart';
 class OnboardingActionButtonWidget extends StatelessWidget {
   final String label;
   final Color buttonColor;
+  final Color? backgroundColor;
+  final Color? buttonTextColor;
   final VoidCallback onPressed;
 
   const OnboardingActionButtonWidget({
     required this.label,
     required this.buttonColor,
     required this.onPressed,
+    this.backgroundColor,
+    this.buttonTextColor,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = IosTheme.of(context);
+    final resolvedBackgroundColor = switch (theme) {
+      IosLightThemeData() =>
+        backgroundColor ?? const Color.fromRGBO(236, 236, 236, 1),
+      _ =>
+        backgroundColor ??
+            theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
+    };
+    final resolvedButtonTextColor = switch (theme) {
+      IosLightThemeData() =>
+        buttonTextColor ?? const Color.fromRGBO(28, 28, 30, 1),
+      _ =>
+        buttonTextColor ?? theme.defaultSystemBackgroundsColors.primaryDarkBase,
+    };
+
     return ColoredBox(
-      color: theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
+      color: resolvedBackgroundColor,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -36,9 +54,7 @@ class OnboardingActionButtonWidget extends StatelessWidget {
                       child: Text(
                         label,
                         style: theme.typography.bodyBold.copyWith(
-                          color: theme
-                              .defaultSystemBackgroundsColors
-                              .primaryDarkBase,
+                          color: resolvedButtonTextColor,
                         ),
                       ),
                     ),

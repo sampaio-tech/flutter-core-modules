@@ -10,6 +10,9 @@ class OnboardingPageWidget extends HookWidget {
   final List<Widget> features;
   final String buttonLabel;
   final Color accentColor;
+  final Color? backgroundColor;
+  final Color? bottomSectionColor;
+  final Color? buttonTextColor;
   final VoidCallback onPressed;
   final bool showCloseButton;
 
@@ -19,6 +22,9 @@ class OnboardingPageWidget extends HookWidget {
     required this.buttonLabel,
     required this.accentColor,
     required this.onPressed,
+    this.backgroundColor,
+    this.bottomSectionColor,
+    this.buttonTextColor,
     this.showCloseButton = true,
     super.key,
   });
@@ -76,21 +82,19 @@ class OnboardingPageWidget extends HookWidget {
       [featuresController, features],
     );
 
-    final isMounted = useIsMounted();
-
     useEffect(() {
       Future<void> startAnimations() async {
-        if (!isMounted()) return;
+        if (!context.mounted) return;
         headerController.forward();
         await Future<void>.delayed(const Duration(milliseconds: 400));
-        if (!isMounted()) return;
+        if (!context.mounted) return;
         featuresController.forward();
         await Future<void>.delayed(
           Duration(
             milliseconds: (featuresDuration.inMilliseconds * 0.4).round(),
           ),
         );
-        if (!isMounted()) return;
+        if (!context.mounted) return;
         buttonController.forward();
       }
 
@@ -99,9 +103,23 @@ class OnboardingPageWidget extends HookWidget {
     }, const []);
 
     final theme = IosTheme.of(context);
+    final resolvedBackgroundColor = switch (theme) {
+      IosLightThemeData() =>
+        backgroundColor ?? const Color.fromRGBO(245, 245, 245, 1),
+      _ =>
+        backgroundColor ??
+            theme.defaultSystemBackgroundsColors.secondaryDarkBase,
+    };
+    final resolvedBottomSectionColor = switch (theme) {
+      IosLightThemeData() =>
+        bottomSectionColor ?? const Color.fromRGBO(236, 236, 236, 1),
+      _ =>
+        bottomSectionColor ??
+            theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
+    };
 
     return ColoredBox(
-      color: theme.defaultSystemBackgroundsColors.secondaryDarkBase,
+      color: resolvedBackgroundColor,
       child: Column(
         children: [
           Expanded(
@@ -154,6 +172,8 @@ class OnboardingPageWidget extends HookWidget {
               child: OnboardingActionButtonWidget(
                 label: buttonLabel,
                 buttonColor: accentColor,
+                backgroundColor: resolvedBottomSectionColor,
+                buttonTextColor: buttonTextColor,
                 onPressed: onPressed,
               ),
             ),

@@ -8,7 +8,7 @@ import 'package:ios_design_system/ios_design_system.dart';
 
 class ShellRouteWidget extends HookConsumerWidget {
   final List<NavigationTab> tabs;
-  final Color? activeColor;
+  final Color? Function(BuildContext context)? activeColor;
 
   const ShellRouteWidget({required this.tabs, super.key, this.activeColor});
 
@@ -50,7 +50,9 @@ class ShellRouteWidget extends HookConsumerWidget {
           child: CupertinoTabScaffold(
             controller: controller,
             tabBar: CupertinoTabBar(
-              activeColor: activeColor ?? theme.acessibleColors.systemGreen,
+              activeColor:
+                  activeColor?.call(context) ??
+                  theme.acessibleColors.systemGreen,
               items: tabs
                   .map(
                     (navigationTab) => BottomNavigationBarItem(
