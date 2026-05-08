@@ -9,7 +9,7 @@ final class FirebaseRemoteConfigCore {
     final firebaseRemoteConfig = FirebaseRemoteConfig.instance;
     await firebaseRemoteConfig.setConfigSettings(
       RemoteConfigSettings(
-        fetchTimeout: const Duration(minutes: 2),
+        fetchTimeout: const Duration(seconds: 10),
         minimumFetchInterval: switch (kDebugMode) {
           true => const Duration(minutes: 1),
           false => const Duration(minutes: 5),
@@ -17,7 +17,11 @@ final class FirebaseRemoteConfigCore {
       ),
     );
     await firebaseRemoteConfig.ensureInitialized();
-    await firebaseRemoteConfig.fetchAndActivate();
+    try {
+      await firebaseRemoteConfig.fetchAndActivate();
+    } catch (_) {
+      // Offline or fetch failed — cached/default values will be used
+    }
     return firebaseRemoteConfig;
   }
 
