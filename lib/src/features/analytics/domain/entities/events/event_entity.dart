@@ -71,6 +71,7 @@ abstract class EventEntity {
     if (kDebugMode) {
       log('track event - ${name} - ${properties}');
     }
+    if (!context.mounted) return;
     final providerContainer = ProviderScope.containerOf(context);
     return providerContainer.read(analyticsRepositoryProvider).track(this);
   }
