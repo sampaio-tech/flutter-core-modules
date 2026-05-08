@@ -60,7 +60,7 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
     });
   }
 
-  Future<CustomerInfo?> get({bool invalidateCache = true}) async {
+  Future<CustomerInfo?> get({bool invalidateCache = false}) async {
     if (invalidateCache) {
       await _invalidateCustomerInfoCacheUsecase();
     }
