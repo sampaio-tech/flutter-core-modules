@@ -8,13 +8,13 @@ class TapOnDarkModeSettings extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'enable': themeData is IosDarkThemeData,
-    'theme': themeData.runtimeType
-        .toString()
-        .replaceAll('Ios', '')
-        .replaceAll('ThemeData', '')
-        .toLowerCase(),
-  };
+        'enable': themeData is IosDarkThemeData,
+        'theme': themeData.runtimeType
+            .toString()
+            .replaceAll('Ios', '')
+            .replaceAll('ThemeData', '')
+            .toLowerCase(),
+      };
 }
 
 class TapOnChangeLanguageSettings extends EventEntity {
@@ -53,10 +53,10 @@ class TapOnCopyToClipboard extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    if (label != null) 'label': label ?? '',
-    if (title != null) 'title': title ?? '',
-    if (description != null) 'description': description ?? '',
-  };
+        if (label != null) 'label': label ?? '',
+        if (title != null) 'title': title ?? '',
+        if (description != null) 'description': description ?? '',
+      };
 }
 
 class TapOnOpenLink extends EventEntity {
@@ -72,10 +72,10 @@ class TapOnOpenLink extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    if (label != null) 'label': label ?? '',
-    if (title != null) 'title': title ?? '',
-    if (description != null) 'description': description ?? '',
-  };
+        if (label != null) 'label': label ?? '',
+        if (title != null) 'title': title ?? '',
+        if (description != null) 'description': description ?? '',
+      };
 }
 
 class TapOnReviewButton extends EventEntity {

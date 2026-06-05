@@ -10,9 +10,9 @@ const _key = 'hapticFeedback';
 const kDefaultHapticFeedback = true;
 
 String hapticFeedbackKey() => switch (kDebugMode) {
-  true => '${_key}Debug',
-  false => _key,
-};
+      true => '${_key}Debug',
+      false => _key,
+    };
 
 class HapticFeedbackStateNotifier extends CacheBoolStateNotifier {
   HapticFeedbackStateNotifier({
@@ -25,9 +25,9 @@ class HapticFeedbackStateNotifier extends CacheBoolStateNotifier {
 
 final hapticFeedbackStateNotifierProvider =
     StateNotifierProvider<HapticFeedbackStateNotifier, bool>(
-      (ref) => HapticFeedbackStateNotifier(
-        getBoolUsecase: ref.read(getBoolUsecaseProvider),
-        setBoolUsecase: ref.read(setBoolUsecaseProvider),
-        removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
-      ),
-    );
+  (ref) => HapticFeedbackStateNotifier(
+    getBoolUsecase: ref.read(getBoolUsecaseProvider),
+    setBoolUsecase: ref.read(setBoolUsecaseProvider),
+    removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
+  ),
+);

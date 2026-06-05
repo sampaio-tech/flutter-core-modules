@@ -7,7 +7,7 @@ class GetAppUserIdUsecase {
   final RevenueRepository _repository;
 
   const GetAppUserIdUsecase({required RevenueRepository repository})
-    : _repository = repository;
+      : _repository = repository;
 
   Future<String?> call() => _repository.getAppUserID();
 }

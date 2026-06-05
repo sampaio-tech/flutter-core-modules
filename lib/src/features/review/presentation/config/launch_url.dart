@@ -26,4 +26,5 @@ Future<bool> launchFeedback({
 String generateSubject({
   required String appName,
   required PackageInfo packageInfo,
-}) => '$appName | Version ${packageInfo.version}+${packageInfo.buildNumber}';
+}) =>
+    '$appName | Version ${packageInfo.version}+${packageInfo.buildNumber}';

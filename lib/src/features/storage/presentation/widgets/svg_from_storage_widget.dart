@@ -54,21 +54,22 @@ class SvgFromStorageWidget extends HookConsumerWidget {
     Widget? errorWidget,
     Duration fadeDuration = const Duration(milliseconds: 300),
     Duration animationDuration = Duration.zero,
-  }) => SvgFromStorageWidget(
-    path: path,
-    fit: fit,
-    alignment: alignment,
-    color: color,
-    width: width,
-    height: height,
-    enableSvgCache: enableSvgCache,
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-    progressIndicatorWidget: progressIndicatorWidget,
-    errorWidget: errorWidget,
-    fadeDuration: fadeDuration,
-    animationDuration: animationDuration,
-  );
+  }) =>
+      SvgFromStorageWidget(
+        path: path,
+        fit: fit,
+        alignment: alignment,
+        color: color,
+        width: width,
+        height: height,
+        enableSvgCache: enableSvgCache,
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+        progressIndicatorWidget: progressIndicatorWidget,
+        errorWidget: errorWidget,
+        fadeDuration: fadeDuration,
+        animationDuration: animationDuration,
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -100,38 +101,38 @@ class SvgFromStorageWidget extends HookConsumerWidget {
         child: switch (state) {
           LoadFailureState() => errorWidget,
           LoadSuccessState(value: final String src) => switch (enableSvgCache) {
-            true => CachedNetworkSVGImage(
-              fadeDuration: animationDuration <= Duration.zero
-                  ? fadeDuration
-                  : Duration.zero,
-              src,
-              width: width,
-              height: height,
-              fit: fit,
-              alignment: alignment,
-              colorFilter: switch (color) {
-                null => null,
-                final color => ColorFilter.mode(color, BlendMode.srcIn),
-              },
-              errorWidget: errorWidget,
-              placeholder: progressIndicatorWidget,
-            ),
-            false => SvgPicture.network(
-              src,
-              width: width,
-              height: height,
-              fit: fit,
-              alignment: alignment,
-              colorFilter: switch (color) {
-                null => null,
-                final color => ColorFilter.mode(color, BlendMode.srcIn),
-              },
-              errorBuilder: (context, error, stackTrace) =>
-                  errorWidget ?? const SizedBox.shrink(),
-              placeholderBuilder: (context) =>
-                  progressIndicatorWidget ?? const SizedBox.shrink(),
-            ),
-          },
+              true => CachedNetworkSVGImage(
+                  fadeDuration: animationDuration <= Duration.zero
+                      ? fadeDuration
+                      : Duration.zero,
+                  src,
+                  width: width,
+                  height: height,
+                  fit: fit,
+                  alignment: alignment,
+                  colorFilter: switch (color) {
+                    null => null,
+                    final color => ColorFilter.mode(color, BlendMode.srcIn),
+                  },
+                  errorWidget: errorWidget,
+                  placeholder: progressIndicatorWidget,
+                ),
+              false => SvgPicture.network(
+                  src,
+                  width: width,
+                  height: height,
+                  fit: fit,
+                  alignment: alignment,
+                  colorFilter: switch (color) {
+                    null => null,
+                    final color => ColorFilter.mode(color, BlendMode.srcIn),
+                  },
+                  errorBuilder: (context, error, stackTrace) =>
+                      errorWidget ?? const SizedBox.shrink(),
+                  placeholderBuilder: (context) =>
+                      progressIndicatorWidget ?? const SizedBox.shrink(),
+                ),
+            },
           _ => progressIndicatorWidget,
         },
       ),

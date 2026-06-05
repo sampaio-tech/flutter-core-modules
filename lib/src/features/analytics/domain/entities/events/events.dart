@@ -11,11 +11,11 @@ class ChangeLanguageTo extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'locale': {
-      'languageCode': locale.languageCode,
-      if (locale.countryCode != null) 'countryCode': locale.countryCode,
-    },
-  };
+        'locale': {
+          'languageCode': locale.languageCode,
+          if (locale.countryCode != null) 'countryCode': locale.countryCode,
+        },
+      };
 }
 
 class InAppReviewIsAvailable extends EventEntity {
@@ -37,9 +37,9 @@ class OnHasActiveSubscriptionCallback extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'featureLocked': featureLocked,
-    if (event != null) 'event': event!.name,
-  };
+        'featureLocked': featureLocked,
+        if (event != null) 'event': event!.name,
+      };
 }
 
 class OnPresentedPaywallCallback extends EventEntity {
@@ -53,9 +53,9 @@ class OnPresentedPaywallCallback extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'featureLocked': featureLocked,
-    if (event != null) 'event': event!.name,
-  };
+        'featureLocked': featureLocked,
+        if (event != null) 'event': event!.name,
+      };
 }
 
 class OnSyncPurchasesCallback extends EventEntity {
@@ -71,10 +71,10 @@ class OnSyncPurchasesCallback extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'featureLocked': featureLocked,
-    if (event != null) 'event': event!.name,
-    'paywallResult': paywallResult.name.toString(),
-  };
+        'featureLocked': featureLocked,
+        if (event != null) 'event': event!.name,
+        'paywallResult': paywallResult.name.toString(),
+      };
 }
 
 class OnPresentPaywallResultCallback extends EventEntity {
@@ -90,10 +90,10 @@ class OnPresentPaywallResultCallback extends EventEntity {
 
   @override
   Map<String, Object>? get properties => {
-    'featureLocked': featureLocked,
-    if (event != null) 'event': event!.name,
-    'paywallResult': paywallResult.name.toString(),
-  };
+        'featureLocked': featureLocked,
+        if (event != null) 'event': event!.name,
+        'paywallResult': paywallResult.name.toString(),
+      };
 }
 
 class InitApp extends EventEntity {

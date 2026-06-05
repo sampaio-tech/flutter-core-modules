@@ -11,9 +11,9 @@ const _key = 'wakelock';
 const kDefaultWakelock = true;
 
 String wakelockKey() => switch (kDebugMode) {
-  true => '${_key}Debug',
-  false => _key,
-};
+      true => '${_key}Debug',
+      false => _key,
+    };
 
 class WakelockStateNotifier extends CacheBoolStateNotifier {
   WakelockStateNotifier({
@@ -31,9 +31,9 @@ class WakelockStateNotifier extends CacheBoolStateNotifier {
 
 final wakelockStateNotifierProvider =
     StateNotifierProvider<WakelockStateNotifier, bool>(
-      (ref) => WakelockStateNotifier(
-        getBoolUsecase: ref.read(getBoolUsecaseProvider),
-        setBoolUsecase: ref.read(setBoolUsecaseProvider),
-        removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
-      ),
-    );
+  (ref) => WakelockStateNotifier(
+    getBoolUsecase: ref.read(getBoolUsecaseProvider),
+    setBoolUsecase: ref.read(setBoolUsecaseProvider),
+    removeCacheUsecase: ref.read(removeCacheUsecaseProvider),
+  ),
+);

@@ -50,8 +50,7 @@ class ShellRouteWidget extends HookConsumerWidget {
           child: CupertinoTabScaffold(
             controller: controller,
             tabBar: CupertinoTabBar(
-              activeColor:
-                  activeColor?.call(context) ??
+              activeColor: activeColor?.call(context) ??
                   theme.acessibleColors.systemGreen,
               items: tabs
                   .map(
@@ -159,5 +158,5 @@ abstract class NavigationTab {
 
 final navigatiorKeyProvider =
     Provider.family<GlobalKey<NavigatorState>, NavigationTab?>(
-      (ref, args) => GlobalKey<NavigatorState>(),
-    );
+  (ref, args) => GlobalKey<NavigatorState>(),
+);

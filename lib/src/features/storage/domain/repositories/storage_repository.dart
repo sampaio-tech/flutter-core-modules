@@ -18,35 +18,37 @@ abstract class StorageRepository {
     required String path,
     required DateTime? invalidateCacheBefore,
     required Duration? invalidateCacheDuration,
-  }) => forwardedCachedGet<StorageFailure, String>(
-    path: path,
-    key: const UrlCacheKey(),
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-    getFromRemote: remoteDataSource.getDownloadUrl,
-    getFromLocal: localDataSource.getDownloadUrl,
-    setLocal: localDataSource.setDownloadUrl,
-    setSavedAtLocal: localDataSource.setSavedAt,
-    emptyCacheFailure: const EmptyCacheStorageFailure(),
-    unidentifiedFailure: const UnidentifiedStorageFailure(),
-    localDataSource: localDataSource,
-  );
+  }) =>
+      forwardedCachedGet<StorageFailure, String>(
+        path: path,
+        key: const UrlCacheKey(),
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+        getFromRemote: remoteDataSource.getDownloadUrl,
+        getFromLocal: localDataSource.getDownloadUrl,
+        setLocal: localDataSource.setDownloadUrl,
+        setSavedAtLocal: localDataSource.setSavedAt,
+        emptyCacheFailure: const EmptyCacheStorageFailure(),
+        unidentifiedFailure: const UnidentifiedStorageFailure(),
+        localDataSource: localDataSource,
+      );
 
   Future<Either<StorageFailure, dynamic>> getJson({
     required String path,
     required DateTime? invalidateCacheBefore,
     required Duration? invalidateCacheDuration,
-  }) => forwardedCachedGet<StorageFailure, dynamic>(
-    path: path,
-    key: const JsonCacheKey(),
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-    getFromRemote: remoteDataSource.getJson,
-    getFromLocal: localDataSource.getJson,
-    setLocal: localDataSource.setJson,
-    setSavedAtLocal: localDataSource.setSavedAt,
-    emptyCacheFailure: const EmptyCacheStorageFailure(),
-    unidentifiedFailure: const UnidentifiedStorageFailure(),
-    localDataSource: localDataSource,
-  );
+  }) =>
+      forwardedCachedGet<StorageFailure, dynamic>(
+        path: path,
+        key: const JsonCacheKey(),
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+        getFromRemote: remoteDataSource.getJson,
+        getFromLocal: localDataSource.getJson,
+        setLocal: localDataSource.setJson,
+        setSavedAtLocal: localDataSource.setSavedAt,
+        emptyCacheFailure: const EmptyCacheStorageFailure(),
+        unidentifiedFailure: const UnidentifiedStorageFailure(),
+        localDataSource: localDataSource,
+      );
 }

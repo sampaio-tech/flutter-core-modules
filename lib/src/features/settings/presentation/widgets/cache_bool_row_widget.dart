@@ -19,7 +19,7 @@ class CacheBoolRowWidget extends HookConsumerWidget {
   });
 
   final StateNotifierProvider<CacheBoolStateNotifier, bool>
-  stateNotifierProvider;
+      stateNotifierProvider;
   final bool displayDivider;
   final void Function(bool newState)? onPressed;
   final void Function(bool newState)? onChanged;

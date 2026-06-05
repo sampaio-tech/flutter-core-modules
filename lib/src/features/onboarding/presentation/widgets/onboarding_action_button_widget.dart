@@ -23,9 +23,8 @@ class OnboardingActionButtonWidget extends StatelessWidget {
     final resolvedBackgroundColor = switch (theme) {
       IosLightThemeData() =>
         backgroundColor ?? const Color.fromRGBO(236, 236, 236, 1),
-      _ =>
-        backgroundColor ??
-            theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
+      _ => backgroundColor ??
+          theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
     };
     final resolvedButtonTextColor = switch (theme) {
       IosLightThemeData() =>

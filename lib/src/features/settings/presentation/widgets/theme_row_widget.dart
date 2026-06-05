@@ -64,10 +64,10 @@ class ThemeRowWidget extends HookConsumerWidget {
       description: switch (description) {
         null => null,
         final description => (theme) => DescriptionRegularWidget(
-          description: description,
-          displayCupertinoActivityIndicator: false,
-          colorBuilder: null,
-        ),
+              description: description,
+              displayCupertinoActivityIndicator: false,
+              colorBuilder: null,
+            ),
       },
       displayDivider: displayDivider,
       onPressed: () {

@@ -15,9 +15,9 @@ class FirebaseStorageRepository extends StorageRepository {
     required this.localDataSource,
     required this.remoteDataSource,
   }) : super(
-         localDataSource: localDataSource,
-         remoteDataSource: remoteDataSource,
-       );
+          localDataSource: localDataSource,
+          remoteDataSource: remoteDataSource,
+        );
 }
 
 final firebaseStorageProvider = Provider<FirebaseStorage>(
@@ -26,10 +26,10 @@ final firebaseStorageProvider = Provider<FirebaseStorage>(
 
 final firebaseStorageRepositoryProvider =
     Provider.autoDispose<StorageRepository>(
-      (ref) => FirebaseStorageRepository(
-        localDataSource: ref.read(
-          sharedPreferencesCacheLocalDataSourceProvider,
-        ),
-        remoteDataSource: ref.read(firebaseStorageRemoteDataSourceProvider),
-      ),
-    );
+  (ref) => FirebaseStorageRepository(
+    localDataSource: ref.read(
+      sharedPreferencesCacheLocalDataSourceProvider,
+    ),
+    remoteDataSource: ref.read(firebaseStorageRemoteDataSourceProvider),
+  ),
+);

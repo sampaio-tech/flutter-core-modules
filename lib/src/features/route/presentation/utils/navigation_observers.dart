@@ -14,10 +14,10 @@ List<NavigatorObserver> defaultNavigatorObservers(BuildContext context) {
   final posthog = ProviderScope.containerOf(context).read(posthogProvider);
   return switch (DotEnv.enableAnalytics) {
     true => [
-      if (FirebaseAnalyticsConfig.enabled && firebaseAnalytics != null)
-        FirebaseAnalyticsObserver(analytics: firebaseAnalytics),
-      if (PosthogConfig.enabled && posthog != null) PosthogObserver(),
-    ],
+        if (FirebaseAnalyticsConfig.enabled && firebaseAnalytics != null)
+          FirebaseAnalyticsObserver(analytics: firebaseAnalytics),
+        if (PosthogConfig.enabled && posthog != null) PosthogObserver(),
+      ],
     false => [],
   };
 }

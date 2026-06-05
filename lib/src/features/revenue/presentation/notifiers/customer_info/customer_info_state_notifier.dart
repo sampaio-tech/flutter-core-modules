@@ -13,29 +13,30 @@ import '../../../domain/usecases/sync_purchases_usecase.dart';
 class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
   final GetCustomerInfoUsecase _getCustomerInfoUsecase;
   final RemoveCustomerInfoUpdateListenerUsecase
-  _removeCustomerInfoUpdateListenerUsecase;
+      _removeCustomerInfoUpdateListenerUsecase;
   final AddCustomerInfoUpdateListenerUsecase
-  _addCustomerInfoUpdateListenerUsecase;
+      _addCustomerInfoUpdateListenerUsecase;
   final InvalidateCustomerInfoCacheUsecase _invalidateCustomerInfoCacheUsecase;
   final SyncPurchasesUsecase _syncPurchasesUsecase;
 
   CustomerInfoStateNotifier({
     required GetCustomerInfoUsecase getCustomerInfoUsecase,
     required RemoveCustomerInfoUpdateListenerUsecase
-    removeCustomerInfoUpdateListenerUsecase,
+        removeCustomerInfoUpdateListenerUsecase,
     required AddCustomerInfoUpdateListenerUsecase
-    addCustomerInfoUpdateListenerUsecase,
+        addCustomerInfoUpdateListenerUsecase,
     required InvalidateCustomerInfoCacheUsecase
-    invalidateCustomerInfoCacheUsecase,
+        invalidateCustomerInfoCacheUsecase,
     required SyncPurchasesUsecase syncPurchasesUsecase,
-  }) : _getCustomerInfoUsecase = getCustomerInfoUsecase,
-       _removeCustomerInfoUpdateListenerUsecase =
-           removeCustomerInfoUpdateListenerUsecase,
-       _addCustomerInfoUpdateListenerUsecase =
-           addCustomerInfoUpdateListenerUsecase,
-       _invalidateCustomerInfoCacheUsecase = invalidateCustomerInfoCacheUsecase,
-       _syncPurchasesUsecase = syncPurchasesUsecase,
-       super(null);
+  })  : _getCustomerInfoUsecase = getCustomerInfoUsecase,
+        _removeCustomerInfoUpdateListenerUsecase =
+            removeCustomerInfoUpdateListenerUsecase,
+        _addCustomerInfoUpdateListenerUsecase =
+            addCustomerInfoUpdateListenerUsecase,
+        _invalidateCustomerInfoCacheUsecase =
+            invalidateCustomerInfoCacheUsecase,
+        _syncPurchasesUsecase = syncPurchasesUsecase,
+        super(null);
 
   Future<PaywallResult?> presentPaywall({
     void Function()? onHasActiveSubscriptionCallback,
@@ -91,20 +92,20 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
 
 final customerInfoStateNotifierProvider =
     StateNotifierProvider<CustomerInfoStateNotifier, CustomerInfo?>(
-      (ref) => CustomerInfoStateNotifier(
-        syncPurchasesUsecase: ref.read(syncPurchasesUsecaseProvider),
-        getCustomerInfoUsecase: ref.read(getCustomerInfoUsecaseProvider),
-        removeCustomerInfoUpdateListenerUsecase: ref.read(
-          removeCustomerInfoUpdateListenerUsecaseProvider,
-        ),
-        addCustomerInfoUpdateListenerUsecase: ref.read(
-          addCustomerInfoUpdateListenerUsecaseProvider,
-        ),
-        invalidateCustomerInfoCacheUsecase: ref.read(
-          invalidateCustomerInfoCacheUsecaseProvider,
-        ),
-      ),
-    );
+  (ref) => CustomerInfoStateNotifier(
+    syncPurchasesUsecase: ref.read(syncPurchasesUsecaseProvider),
+    getCustomerInfoUsecase: ref.read(getCustomerInfoUsecaseProvider),
+    removeCustomerInfoUpdateListenerUsecase: ref.read(
+      removeCustomerInfoUpdateListenerUsecaseProvider,
+    ),
+    addCustomerInfoUpdateListenerUsecase: ref.read(
+      addCustomerInfoUpdateListenerUsecaseProvider,
+    ),
+    invalidateCustomerInfoCacheUsecase: ref.read(
+      invalidateCustomerInfoCacheUsecaseProvider,
+    ),
+  ),
+);
 
 final isPremiumCustomerProvider = Provider<bool>(
   (ref) => ref.watch(

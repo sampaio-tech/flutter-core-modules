@@ -15,10 +15,10 @@ class ThemeStateNotifier extends SafeStateNotifier<IosThemeData?> {
     required GetThemeDataUsecase getThemeDataUsecase,
     required RemoveThemeDataUsecase removeThemeDataUsecase,
     required SetThemeDataUsecase setThemeDataUsecase,
-  }) : _getThemeDataUsecase = getThemeDataUsecase,
-       _removeThemeDataUsecase = removeThemeDataUsecase,
-       _setThemeDataUsecase = setThemeDataUsecase,
-       super(getThemeDataUsecase());
+  })  : _getThemeDataUsecase = getThemeDataUsecase,
+        _removeThemeDataUsecase = removeThemeDataUsecase,
+        _setThemeDataUsecase = setThemeDataUsecase,
+        super(getThemeDataUsecase());
 
   IosThemeData? getThemeData() {
     final iosThemeData = _getThemeDataUsecase();
@@ -52,9 +52,9 @@ class ThemeStateNotifier extends SafeStateNotifier<IosThemeData?> {
 
 final themeStateNotifierProvider =
     StateNotifierProvider<ThemeStateNotifier, IosThemeData?>(
-      (ref) => ThemeStateNotifier(
-        getThemeDataUsecase: ref.read(getThemeDataUsecaseProvider),
-        removeThemeDataUsecase: ref.read(removeThemeDataUsecaseProvider),
-        setThemeDataUsecase: ref.read(setThemeDataUsecaseProvider),
-      ),
-    );
+  (ref) => ThemeStateNotifier(
+    getThemeDataUsecase: ref.read(getThemeDataUsecaseProvider),
+    removeThemeDataUsecase: ref.read(removeThemeDataUsecaseProvider),
+    setThemeDataUsecase: ref.read(setThemeDataUsecaseProvider),
+  ),
+);

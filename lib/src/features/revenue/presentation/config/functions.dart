@@ -29,39 +29,39 @@ Future<PaywallResult?> presentPaywallForwarded({
   return providerContainer
       .read(customerInfoStateNotifierProvider.notifier)
       .presentPaywall(
-        onHasActiveSubscriptionCallback: () {
-          OnHasActiveSubscriptionCallback(
-            event: event,
-            featureLocked: featureLocked,
-          ).track(context: context);
-          onHasActiveSubscriptionCallback?.call();
-          onTap?.call();
-        },
-        onPresentedPaywallCallback: () {
-          OnPresentedPaywallCallback(
-            event: event,
-            featureLocked: featureLocked,
-          ).track(context: context);
-          onPresentedPaywallCallback?.call();
-        },
-        onSyncPurchasesCallback: (paywallResult) {
-          OnSyncPurchasesCallback(
-            event: event,
-            featureLocked: featureLocked,
-            paywallResult: paywallResult,
-          ).track(context: context);
-          onSyncPurchasesCallback?.call(paywallResult);
-        },
-        onPresentPaywallResultCallback: (paywallResult) {
-          OnPresentPaywallResultCallback(
-            event: event,
-            featureLocked: featureLocked,
-            paywallResult: paywallResult,
-          ).track(context: context);
-          onPresentPaywallResultCallback?.call(paywallResult);
-          if (!featureLocked) {
-            onTap?.call();
-          }
-        },
-      );
+    onHasActiveSubscriptionCallback: () {
+      OnHasActiveSubscriptionCallback(
+        event: event,
+        featureLocked: featureLocked,
+      ).track(context: context);
+      onHasActiveSubscriptionCallback?.call();
+      onTap?.call();
+    },
+    onPresentedPaywallCallback: () {
+      OnPresentedPaywallCallback(
+        event: event,
+        featureLocked: featureLocked,
+      ).track(context: context);
+      onPresentedPaywallCallback?.call();
+    },
+    onSyncPurchasesCallback: (paywallResult) {
+      OnSyncPurchasesCallback(
+        event: event,
+        featureLocked: featureLocked,
+        paywallResult: paywallResult,
+      ).track(context: context);
+      onSyncPurchasesCallback?.call(paywallResult);
+    },
+    onPresentPaywallResultCallback: (paywallResult) {
+      OnPresentPaywallResultCallback(
+        event: event,
+        featureLocked: featureLocked,
+        paywallResult: paywallResult,
+      ).track(context: context);
+      onPresentPaywallResultCallback?.call(paywallResult);
+      if (!featureLocked) {
+        onTap?.call();
+      }
+    },
+  );
 }

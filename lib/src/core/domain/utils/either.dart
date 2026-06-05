@@ -5,9 +5,9 @@ sealed class Either<L, R> {
   const Either();
 
   T fold<T>(T Function(L) fa, T Function(R) fb) => switch (this) {
-    Left(value: final a) => fa.call(a),
-    Right(value: final b) => fb.call(b),
-  };
+        Left(value: final a) => fa.call(a),
+        Right(value: final b) => fb.call(b),
+      };
 }
 
 class Right<L, R> extends Either<L, R> {

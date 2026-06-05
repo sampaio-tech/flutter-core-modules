@@ -29,5 +29,5 @@ class LaunchFeedbackStateNotifier extends SafeStateNotifier<bool> {
 
 final launchFeedbackStateNotifierProvider =
     StateNotifierProvider<LaunchFeedbackStateNotifier, bool>(
-      (ref) => LaunchFeedbackStateNotifier(),
-    );
+  (ref) => LaunchFeedbackStateNotifier(),
+);

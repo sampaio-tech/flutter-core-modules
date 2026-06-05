@@ -9,22 +9,23 @@ class GetDownloadUrlUsecase {
   final StorageRepository _repository;
 
   const GetDownloadUrlUsecase({required StorageRepository repository})
-    : _repository = repository;
+      : _repository = repository;
 
   Future<Either<StorageFailure, String>> call({
     required String path,
     required DateTime? invalidateCacheBefore,
     required Duration? invalidateCacheDuration,
-  }) => _repository.getDownloadUrl(
-    path: path,
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-  );
+  }) =>
+      _repository.getDownloadUrl(
+        path: path,
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+      );
 }
 
 final getDownloadUrlUsecaseProvider =
     Provider.autoDispose<GetDownloadUrlUsecase>(
-      (ref) => GetDownloadUrlUsecase(
-        repository: ref.read(firebaseStorageRepositoryProvider),
-      ),
-    );
+  (ref) => GetDownloadUrlUsecase(
+    repository: ref.read(firebaseStorageRepositoryProvider),
+  ),
+);

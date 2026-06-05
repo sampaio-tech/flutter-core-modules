@@ -24,16 +24,14 @@ class LabelRowWidget extends HookConsumerWidget {
     required String title,
     required String? toastMessage,
     required BuildContext context,
-  })?
-  onPressed;
+  })? onPressed;
   final void Function({
     required String? label,
     required String? description,
     required String title,
     required String? toastMessage,
     required BuildContext context,
-  })?
-  onLongPress;
+  })? onLongPress;
   final String title;
   final String? description;
   final String? label;
@@ -44,21 +42,18 @@ class LabelRowWidget extends HookConsumerWidget {
     required Color? Function(IosThemeData theme)? colorBuilder,
     required bool displayCupertinoActivityIndicator,
     required BoxConstraints Function(BuildContext context)?
-    boxConstraintsBuilder,
-  })
-  titleBuilder;
+        boxConstraintsBuilder,
+  }) titleBuilder;
   final Widget Function({
     required String description,
     required Color? Function(IosThemeData theme)? colorBuilder,
     required bool displayCupertinoActivityIndicator,
-  })
-  descriptionBuilder;
+  }) descriptionBuilder;
   final Widget Function({
     required String? label,
     required bool displayChevronRight,
     required bool displayCupertinoActivityIndicator,
-  })
-  labelBuilder;
+  }) labelBuilder;
 
   const LabelRowWidget({
     required this.displayDivider,
@@ -90,16 +85,14 @@ class LabelRowWidget extends HookConsumerWidget {
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     String? title,
     String? description,
     String? label,
@@ -109,29 +102,25 @@ class LabelRowWidget extends HookConsumerWidget {
       required Color? Function(IosThemeData theme)? colorBuilder,
       required bool displayCupertinoActivityIndicator,
       required BoxConstraints Function(BuildContext context)?
-      boxConstraintsBuilder,
-    })?
-    titleBuilder,
+          boxConstraintsBuilder,
+    })? titleBuilder,
     Widget Function({
       required String description,
       required Color? Function(IosThemeData theme)? colorBuilder,
       required bool displayCupertinoActivityIndicator,
-    })?
-    descriptionBuilder,
+    })? descriptionBuilder,
     Widget Function({
       required String? label,
       required bool displayChevronRight,
       required bool displayCupertinoActivityIndicator,
-    })?
-    labelBuilder,
+    })? labelBuilder,
     Key? key,
   }) {
     return LabelRowWidget(
       leftWidget: leftWidget ?? this.leftWidget,
       displayDivider: displayDivider ?? this.displayDivider,
       displayChevronRight: displayChevronRight ?? this.displayChevronRight,
-      displayCupertinoActivityIndicator:
-          displayCupertinoActivityIndicator ??
+      displayCupertinoActivityIndicator: displayCupertinoActivityIndicator ??
           this.displayCupertinoActivityIndicator,
       titleColorBuilder: titleColorBuilder ?? this.titleColorBuilder,
       onPressed: onPressed ?? this.onPressed,
@@ -158,31 +147,29 @@ class LabelRowWidget extends HookConsumerWidget {
       required String? description,
       required String title,
       required String? toastMessage,
-
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     Widget? leftWidget,
-  }) => LabelRowWidget(
-    leftWidget: leftWidget,
-    displayDivider: displayDivider,
-    title: title,
-    description: description,
-    label: label,
-    toastMessage: toastMessage,
-    labelBuilder: LinkLabelWidget.new,
-    descriptionBuilder: DescriptionLinkWidget.new,
-    onPressed: onPressed ?? openLink,
-    onLongPress: onLongPress ?? copyToClipboard,
-  );
+  }) =>
+      LabelRowWidget(
+        leftWidget: leftWidget,
+        displayDivider: displayDivider,
+        title: title,
+        description: description,
+        label: label,
+        toastMessage: toastMessage,
+        labelBuilder: LinkLabelWidget.new,
+        descriptionBuilder: DescriptionLinkWidget.new,
+        onPressed: onPressed ?? openLink,
+        onLongPress: onLongPress ?? copyToClipboard,
+      );
 
   factory LabelRowWidget.button({
     required bool displayDivider,
@@ -195,32 +182,31 @@ class LabelRowWidget extends HookConsumerWidget {
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     required void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     String? toastMessage,
     Widget? leftWidget,
     bool displayChevronRight = true,
     bool displayCupertinoActivityIndicator = false,
-  }) => LabelRowWidget(
-    leftWidget: leftWidget,
-    displayChevronRight: displayChevronRight,
-    displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-    displayDivider: displayDivider,
-    title: title,
-    description: description,
-    label: label,
-    toastMessage: toastMessage,
-    onPressed: onPressed,
-    onLongPress: onLongPress,
-  );
+  }) =>
+      LabelRowWidget(
+        leftWidget: leftWidget,
+        displayChevronRight: displayChevronRight,
+        displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
+        displayDivider: displayDivider,
+        title: title,
+        description: description,
+        label: label,
+        toastMessage: toastMessage,
+        onPressed: onPressed,
+        onLongPress: onLongPress,
+      );
 
   factory LabelRowWidget.blueButton({
     required bool displayDivider,
@@ -232,36 +218,33 @@ class LabelRowWidget extends HookConsumerWidget {
       required String? description,
       required String title,
       required String? toastMessage,
-
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     required void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
-
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     String? toastMessage,
     Widget? leftWidget,
     bool displayChevronRight = false,
     bool displayCupertinoActivityIndicator = false,
-  }) => LabelRowWidget(
-    leftWidget: leftWidget,
-    displayChevronRight: displayChevronRight,
-    displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-    displayDivider: displayDivider,
-    title: title,
-    description: description,
-    label: label,
-    toastMessage: toastMessage,
-    onPressed: onPressed,
-    onLongPress: onLongPress,
-    titleColorBuilder: (theme) => theme.defaultColors.systemBlue,
-  );
+  }) =>
+      LabelRowWidget(
+        leftWidget: leftWidget,
+        displayChevronRight: displayChevronRight,
+        displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
+        displayDivider: displayDivider,
+        title: title,
+        description: description,
+        label: label,
+        toastMessage: toastMessage,
+        onPressed: onPressed,
+        onLongPress: onLongPress,
+        titleColorBuilder: (theme) => theme.defaultColors.systemBlue,
+      );
 
   factory LabelRowWidget.orangeButton({
     required bool displayDivider,
@@ -273,36 +256,33 @@ class LabelRowWidget extends HookConsumerWidget {
       required String? description,
       required String title,
       required String? toastMessage,
-
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     required void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
-
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     String? toastMessage,
     Widget? leftWidget,
     bool displayChevronRight = false,
     bool displayCupertinoActivityIndicator = false,
-  }) => LabelRowWidget(
-    leftWidget: leftWidget,
-    displayChevronRight: displayChevronRight,
-    displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-    displayDivider: displayDivider,
-    title: title,
-    description: description,
-    label: label,
-    toastMessage: toastMessage,
-    onPressed: onPressed,
-    onLongPress: onLongPress,
-    titleColorBuilder: (theme) => theme.defaultColors.systemOrange,
-  );
+  }) =>
+      LabelRowWidget(
+        leftWidget: leftWidget,
+        displayChevronRight: displayChevronRight,
+        displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
+        displayDivider: displayDivider,
+        title: title,
+        description: description,
+        label: label,
+        toastMessage: toastMessage,
+        onPressed: onPressed,
+        onLongPress: onLongPress,
+        titleColorBuilder: (theme) => theme.defaultColors.systemOrange,
+      );
 
   factory LabelRowWidget.redButton({
     required bool displayDivider,
@@ -315,34 +295,32 @@ class LabelRowWidget extends HookConsumerWidget {
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onPressed,
+    })? onPressed,
     required void Function({
       required String? label,
       required String? description,
       required String title,
       required String? toastMessage,
       required BuildContext context,
-    })?
-    onLongPress,
+    })? onLongPress,
     String? toastMessage,
-
     bool displayChevronRight = false,
     Widget? leftWidget,
     bool displayCupertinoActivityIndicator = false,
-  }) => LabelRowWidget(
-    leftWidget: leftWidget,
-    displayChevronRight: displayChevronRight,
-    displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-    displayDivider: displayDivider,
-    title: title,
-    description: description,
-    label: label,
-    toastMessage: toastMessage,
-    onPressed: onPressed,
-    onLongPress: onLongPress,
-    titleColorBuilder: (theme) => theme.defaultColors.systemRed,
-  );
+  }) =>
+      LabelRowWidget(
+        leftWidget: leftWidget,
+        displayChevronRight: displayChevronRight,
+        displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
+        displayDivider: displayDivider,
+        title: title,
+        description: description,
+        label: label,
+        toastMessage: toastMessage,
+        onPressed: onPressed,
+        onLongPress: onLongPress,
+        titleColorBuilder: (theme) => theme.defaultColors.systemRed,
+      );
 
   static Future<void> copyToClipboard({
     required String? label,
@@ -411,8 +389,8 @@ class LabelRowWidget extends HookConsumerWidget {
     final theme = IosTheme.of(context);
     return Clipboard.setData(ClipboardData(text: link)).then((value) {
       WebViewModalSheetWidget(url: link, title: title)
-      // ignore: use_build_context_synchronously
-      .show(context: context);
+          // ignore: use_build_context_synchronously
+          .show(context: context);
       if (toastMessage != null) {
         Fluttertoast.showToast(
           // ignore: use_build_context_synchronously
@@ -436,13 +414,14 @@ class LabelRowWidget extends HookConsumerWidget {
       description: switch (description) {
         null => null,
         final description => (theme) => descriptionBuilder(
-          description: description,
-          displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-          colorBuilder: switch (onPressed == null && onLongPress == null) {
-            true => (theme) => theme.defaultLabelColors.tertiary,
-            false => null,
-          },
-        ),
+              description: description,
+              displayCupertinoActivityIndicator:
+                  displayCupertinoActivityIndicator,
+              colorBuilder: switch (onPressed == null && onLongPress == null) {
+                true => (theme) => theme.defaultLabelColors.tertiary,
+                false => null,
+              },
+            ),
       },
       contentPadding: const EdgeInsets.symmetric(
         vertical: 16.5,
@@ -450,18 +429,19 @@ class LabelRowWidget extends HookConsumerWidget {
       leftWidget: leftWidget,
       rightWidget: switch (label == null) {
         true => labelBuilder(
-          label: label,
-          displayChevronRight: displayChevronRight,
-          displayCupertinoActivityIndicator: displayCupertinoActivityIndicator,
-        ),
-        false => Expanded(
-          child: labelBuilder(
             label: label,
             displayChevronRight: displayChevronRight,
             displayCupertinoActivityIndicator:
                 displayCupertinoActivityIndicator,
           ),
-        ),
+        false => Expanded(
+            child: labelBuilder(
+              label: label,
+              displayChevronRight: displayChevronRight,
+              displayCupertinoActivityIndicator:
+                  displayCupertinoActivityIndicator,
+            ),
+          ),
       },
       title: (theme) => titleBuilder(
         title: title,
@@ -479,22 +459,22 @@ class LabelRowWidget extends HookConsumerWidget {
       onPressed: switch (onPressed) {
         null => null,
         final onPressed => () => onPressed(
-          context: context,
-          label: label,
-          description: description,
-          toastMessage: toastMessage,
-          title: title,
-        ),
+              context: context,
+              label: label,
+              description: description,
+              toastMessage: toastMessage,
+              title: title,
+            ),
       },
       onLongPress: switch (onLongPress) {
         null => null,
         final onLongPress => () => onLongPress(
-          context: context,
-          label: label,
-          description: description,
-          toastMessage: toastMessage,
-          title: title,
-        ),
+              context: context,
+              label: label,
+              description: description,
+              toastMessage: toastMessage,
+              title: title,
+            ),
       },
     );
   }
@@ -522,13 +502,12 @@ class TitleRegularWidget extends StatelessWidget {
       style: theme.typography.subheadlineRegular.copyWith(
         color: switch (displayCupertinoActivityIndicator) {
           true => theme.defaultLabelColors.tertiary,
-          false =>
-            colorBuilder?.call(theme) ??
-                switch (theme) {
-                  IosLightThemeData() => theme.defaultLabelColors.primary,
-                  IosDarkThemeData() =>
-                    theme.stocksDecorations.defaultColors.primary,
-                },
+          false => colorBuilder?.call(theme) ??
+              switch (theme) {
+                IosLightThemeData() => theme.defaultLabelColors.primary,
+                IosDarkThemeData() =>
+                  theme.stocksDecorations.defaultColors.primary,
+              },
         },
       ),
       textAlign: TextAlign.start,
@@ -537,9 +516,9 @@ class TitleRegularWidget extends StatelessWidget {
     return switch (boxConstraintsBuilder) {
       null => text,
       final boxConstraintsBuilder => ConstrainedBox(
-        constraints: boxConstraintsBuilder(context),
-        child: text,
-      ),
+          constraints: boxConstraintsBuilder(context),
+          child: text,
+        ),
     };
   }
 }
@@ -566,13 +545,12 @@ class TitleBoldWidget extends StatelessWidget {
       style: theme.typography.subheadlineBold.copyWith(
         color: switch (displayCupertinoActivityIndicator) {
           true => theme.defaultLabelColors.tertiary,
-          false =>
-            colorBuilder?.call(theme) ??
-                switch (theme) {
-                  IosLightThemeData() => theme.defaultLabelColors.primary,
-                  IosDarkThemeData() =>
-                    theme.stocksDecorations.defaultColors.primary,
-                },
+          false => colorBuilder?.call(theme) ??
+              switch (theme) {
+                IosLightThemeData() => theme.defaultLabelColors.primary,
+                IosDarkThemeData() =>
+                  theme.stocksDecorations.defaultColors.primary,
+              },
         },
       ),
       textAlign: TextAlign.start,
@@ -581,9 +559,9 @@ class TitleBoldWidget extends StatelessWidget {
     return switch (boxConstraintsBuilder) {
       null => text,
       final boxConstraintsBuilder => ConstrainedBox(
-        constraints: boxConstraintsBuilder(context),
-        child: text,
-      ),
+          constraints: boxConstraintsBuilder(context),
+          child: text,
+        ),
     };
   }
 }
@@ -608,13 +586,12 @@ class DescriptionRegularWidget extends StatelessWidget {
       style: theme.typography.footnoteRegular.copyWith(
         color: switch (displayCupertinoActivityIndicator) {
           true => theme.defaultLabelColors.tertiary,
-          false =>
-            colorBuilder?.call(theme) ??
-                switch (theme) {
-                  IosLightThemeData() => theme.defaultLabelColors.secondary,
-                  IosDarkThemeData() =>
-                    theme.stocksDecorations.defaultColors.secondary,
-                },
+          false => colorBuilder?.call(theme) ??
+              switch (theme) {
+                IosLightThemeData() => theme.defaultLabelColors.secondary,
+                IosDarkThemeData() =>
+                  theme.stocksDecorations.defaultColors.secondary,
+              },
         },
       ),
       textAlign: TextAlign.start,
@@ -672,20 +649,20 @@ class LabelWidget extends StatelessWidget {
         switch (label) {
           null => const SizedBox.shrink(),
           final label => Expanded(
-            child: Text(
-              label,
-              style: theme.typography.footnoteRegular.copyWith(
-                color: switch (theme) {
-                  IosLightThemeData() => theme.defaultLabelColors.secondary,
-                  IosDarkThemeData() =>
-                    theme.stocksDecorations.defaultColors.secondary,
-                },
+              child: Text(
+                label,
+                style: theme.typography.footnoteRegular.copyWith(
+                  color: switch (theme) {
+                    IosLightThemeData() => theme.defaultLabelColors.secondary,
+                    IosDarkThemeData() =>
+                      theme.stocksDecorations.defaultColors.secondary,
+                  },
+                ),
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.visible,
+                maxLines: 3,
               ),
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.visible,
-              maxLines: 3,
             ),
-          ),
         },
         if (displayChevronRight || displayCupertinoActivityIndicator)
           const SizedBox(width: 6),
@@ -722,16 +699,16 @@ class LinkLabelWidget extends StatelessWidget {
         switch (label) {
           null => const SizedBox.shrink(),
           final label => Expanded(
-            child: Text(
-              label,
-              style: theme.typography.footnoteRegular.copyWith(
-                color: theme.defaultColors.systemBlue,
+              child: Text(
+                label,
+                style: theme.typography.footnoteRegular.copyWith(
+                  color: theme.defaultColors.systemBlue,
+                ),
+                textAlign: TextAlign.end,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 3,
               ),
-              textAlign: TextAlign.end,
-              overflow: TextOverflow.ellipsis,
-              maxLines: 3,
             ),
-          ),
         },
         if (displayChevronRight || displayCupertinoActivityIndicator)
           const SizedBox(width: 6),

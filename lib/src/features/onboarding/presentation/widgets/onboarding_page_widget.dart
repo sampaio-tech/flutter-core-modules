@@ -60,11 +60,11 @@ class OnboardingPageWidget extends HookWidget {
     final buttonSlide = useMemoized(
       () =>
           Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-            CurvedAnimation(
-              parent: buttonController,
-              curve: Curves.easeOutCubic,
-            ),
-          ),
+        CurvedAnimation(
+          parent: buttonController,
+          curve: Curves.easeOutCubic,
+        ),
+      ),
       [buttonController],
     );
 
@@ -106,16 +106,14 @@ class OnboardingPageWidget extends HookWidget {
     final resolvedBackgroundColor = switch (theme) {
       IosLightThemeData() =>
         backgroundColor ?? const Color.fromRGBO(245, 245, 245, 1),
-      _ =>
-        backgroundColor ??
-            theme.defaultSystemBackgroundsColors.secondaryDarkBase,
+      _ => backgroundColor ??
+          theme.defaultSystemBackgroundsColors.secondaryDarkBase,
     };
     final resolvedBottomSectionColor = switch (theme) {
       IosLightThemeData() =>
         bottomSectionColor ?? const Color.fromRGBO(236, 236, 236, 1),
-      _ =>
-        bottomSectionColor ??
-            theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
+      _ => bottomSectionColor ??
+          theme.defaultSystemBackgroundsColors.secondaryDarkElevated,
     };
 
     return ColoredBox(
@@ -207,13 +205,13 @@ class _StaggeredFeatureWidget extends StatelessWidget {
       curve: Interval(start, end.clamp(0, 1), curve: Curves.easeOut),
     );
 
-    final slide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
-        .animate(
-          CurvedAnimation(
-            parent: controller,
-            curve: Interval(start, end.clamp(0, 1), curve: Curves.easeOutCubic),
-          ),
-        );
+    final slide =
+        Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(
+      CurvedAnimation(
+        parent: controller,
+        curve: Interval(start, end.clamp(0, 1), curve: Curves.easeOutCubic),
+      ),
+    );
 
     return SlideTransition(
       position: slide,

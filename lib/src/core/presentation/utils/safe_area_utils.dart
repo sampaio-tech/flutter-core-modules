@@ -6,8 +6,7 @@ import 'package:sizer/sizer.dart';
 
 EdgeInsets modalBottomSheetSafeArea(BuildContext context) {
   final safeArea = CupertinoSheetWidget.safeArea(context);
-  final bottom =
-      safeArea.bottom +
+  final bottom = safeArea.bottom +
       switch (Device.screenType == ScreenType.tablet || Platform.isAndroid) {
         true => 100,
         false => 20,

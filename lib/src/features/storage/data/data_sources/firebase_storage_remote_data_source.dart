@@ -17,8 +17,8 @@ class FirebaseStorageRemoteDataSource extends StorageRemoteDataSource {
   const FirebaseStorageRemoteDataSource({
     required FirebaseStorage firebaseStorage,
     required Client httpClient,
-  }) : _firebaseStorage = firebaseStorage,
-       _httpClient = httpClient;
+  })  : _firebaseStorage = firebaseStorage,
+        _httpClient = httpClient;
 
   @override
   Future<Either<StorageFailure, String>> getDownloadUrl({
@@ -42,17 +42,17 @@ class FirebaseStorageRemoteDataSource extends StorageRemoteDataSource {
       ).then<Either<StorageFailure, dynamic>>(
         (failureOrSuccess) async =>
             failureOrSuccess.fold<Future<Either<StorageFailure, dynamic>>>(
-              (failure) async => const Left(UnidentifiedStorageFailure()),
-              (url) async {
-                return _httpClient.get(Uri.parse(url)).then((response) async {
-                  if (response.statusCode == 200) {
-                    final body = response.body;
-                    return Right(jsonDecode(body));
-                  }
-                  return const Left(UnidentifiedStorageFailure());
-                });
-              },
-            ),
+          (failure) async => const Left(UnidentifiedStorageFailure()),
+          (url) async {
+            return _httpClient.get(Uri.parse(url)).then((response) async {
+              if (response.statusCode == 200) {
+                final body = response.body;
+                return Right(jsonDecode(body));
+              }
+              return const Left(UnidentifiedStorageFailure());
+            });
+          },
+        ),
       );
     } catch (err) {
       return const Left(UnidentifiedStorageFailure());
@@ -62,8 +62,8 @@ class FirebaseStorageRemoteDataSource extends StorageRemoteDataSource {
 
 final firebaseStorageRemoteDataSourceProvider =
     Provider.autoDispose<FirebaseStorageRemoteDataSource>(
-      (ref) => FirebaseStorageRemoteDataSource(
-        httpClient: ref.read(firebaseStorageClientProvider),
-        firebaseStorage: ref.read(firebaseStorageProvider),
-      ),
-    );
+  (ref) => FirebaseStorageRemoteDataSource(
+    httpClient: ref.read(firebaseStorageClientProvider),
+    firebaseStorage: ref.read(firebaseStorageProvider),
+  ),
+);

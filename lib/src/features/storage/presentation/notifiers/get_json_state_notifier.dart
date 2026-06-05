@@ -18,10 +18,10 @@ class GetJsonStateNotifier extends GetStateNotifier<StorageFailure, dynamic> {
 
   @override
   Future<Either<StorageFailure, dynamic>> forwardedGet() => _getJsonUsecase(
-    path: path,
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-  );
+        path: path,
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+      );
 }
 
 class GetJsonFamilyArgs {
@@ -36,20 +36,18 @@ class GetJsonFamilyArgs {
   });
 }
 
-final getJsonStateNotifierProvider = StateNotifierProvider.autoDispose
-    .family<
-      GetJsonStateNotifier,
-      State<StorageFailure, dynamic>,
-      GetJsonFamilyArgs
-    >((ref, args) {
-      final notifier = GetJsonStateNotifier(
-        path: args.path,
-        invalidateCacheBefore: args.invalidateCacheBefore,
-        invalidateCacheDuration: args.invalidateCacheDuration,
-        getJsonUsecase: ref.read(getJsonUsecaseProvider),
-      );
-      WidgetsBinding.instance.addPostFrameCallback(
-        (timeStamp) => notifier.lazyGet(),
-      );
-      return notifier;
-    });
+final getJsonStateNotifierProvider = StateNotifierProvider.autoDispose.family<
+    GetJsonStateNotifier,
+    State<StorageFailure, dynamic>,
+    GetJsonFamilyArgs>((ref, args) {
+  final notifier = GetJsonStateNotifier(
+    path: args.path,
+    invalidateCacheBefore: args.invalidateCacheBefore,
+    invalidateCacheDuration: args.invalidateCacheDuration,
+    getJsonUsecase: ref.read(getJsonUsecaseProvider),
+  );
+  WidgetsBinding.instance.addPostFrameCallback(
+    (timeStamp) => notifier.lazyGet(),
+  );
+  return notifier;
+});

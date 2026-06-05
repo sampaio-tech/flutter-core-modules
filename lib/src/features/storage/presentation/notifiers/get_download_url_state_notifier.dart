@@ -39,19 +39,16 @@ class GetDownloadUrlFamilyArgs {
 }
 
 final getDownloadUrlStateNotifierProvider = StateNotifierProvider.autoDispose
-    .family<
-      GetDownloadUrlStateNotifier,
-      State<StorageFailure, String>,
-      GetDownloadUrlFamilyArgs
-    >((ref, args) {
-      final notifier = GetDownloadUrlStateNotifier(
-        path: args.path,
-        invalidateCacheBefore: args.invalidateCacheBefore,
-        invalidateCacheDuration: args.invalidateCacheDuration,
-        getDownloadURLUsecase: ref.read(getDownloadUrlUsecaseProvider),
-      );
-      WidgetsBinding.instance.addPostFrameCallback(
-        (timeStamp) => notifier.lazyGet(),
-      );
-      return notifier;
-    });
+    .family<GetDownloadUrlStateNotifier, State<StorageFailure, String>,
+        GetDownloadUrlFamilyArgs>((ref, args) {
+  final notifier = GetDownloadUrlStateNotifier(
+    path: args.path,
+    invalidateCacheBefore: args.invalidateCacheBefore,
+    invalidateCacheDuration: args.invalidateCacheDuration,
+    getDownloadURLUsecase: ref.read(getDownloadUrlUsecaseProvider),
+  );
+  WidgetsBinding.instance.addPostFrameCallback(
+    (timeStamp) => notifier.lazyGet(),
+  );
+  return notifier;
+});

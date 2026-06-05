@@ -7,14 +7,14 @@ class GetIsAnonymousUsecase {
   final RevenueRepository _repository;
 
   const GetIsAnonymousUsecase({required RevenueRepository repository})
-    : _repository = repository;
+      : _repository = repository;
 
   Future<bool?> call() => _repository.getIsAnonymous();
 }
 
 final getIsAnonymousUsecaseProvider =
     Provider.autoDispose<GetIsAnonymousUsecase>(
-      (ref) => GetIsAnonymousUsecase(
-        repository: ref.read(revenueRepositoryProvider),
-      ),
-    );
+  (ref) => GetIsAnonymousUsecase(
+    repository: ref.read(revenueRepositoryProvider),
+  ),
+);

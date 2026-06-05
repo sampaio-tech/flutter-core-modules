@@ -14,9 +14,9 @@ Future<Either<F, T>> forwardedCachedGet<F, T>({
   required Future<Either<F, T>> Function({required String path}) getFromRemote,
   required Future<T?> Function({required String path}) getFromLocal,
   required Future<bool> Function({required String path, required T? value})
-  setLocal,
+      setLocal,
   required Future<bool> Function({required CacheKey key, required String path})
-  setSavedAtLocal,
+      setSavedAtLocal,
   required F emptyCacheFailure,
   required F unidentifiedFailure,
   required CacheLocalDataSource localDataSource,
@@ -68,14 +68,13 @@ Future<Either<F, T>> forwardedCachedHttpRequest<F, T>({
   bool isOffline = false,
   Future<dynamic> Function({required String path})? getFromLocal,
   Future<bool> Function({required String path, required dynamic value})?
-  setLocal,
+      setLocal,
   Future<bool> Function({required CacheKey key, required String path})?
-  setSavedAtLocal,
+      setSavedAtLocal,
 }) async {
   Future<Either<F, T>> getFromCache() async {
-    final value =
-        await (getFromLocal?.call(path: path) ??
-            localDataSource.getJson(path: path));
+    final value = await (getFromLocal?.call(path: path) ??
+        localDataSource.getJson(path: path));
     if (value != null) {
       return Right(fromJson(value));
     }

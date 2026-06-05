@@ -6,9 +6,9 @@ abstract class CacheKey {
   const CacheKey({required this.name});
 
   String get key => switch (kDebugMode) {
-    true => '${name}_debug',
-    false => name,
-  };
+        true => '${name}_debug',
+        false => name,
+      };
 
   String keyByPath(String path) => '$key$path';
 

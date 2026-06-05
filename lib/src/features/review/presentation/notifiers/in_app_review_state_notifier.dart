@@ -14,10 +14,10 @@ class InAppReviewStateNotifier extends SafeStateNotifier<bool> {
     required IsAvailableUsecase isAvailableUsecase,
     required OpenStoreListingUsecase openStoreListingUsecase,
     required RequestReviewUsecase requestReviewUsecase,
-  }) : _isAvailableUsecase = isAvailableUsecase,
-       _openStoreListingUsecase = openStoreListingUsecase,
-       _requestReviewUsecase = requestReviewUsecase,
-       super(false);
+  })  : _isAvailableUsecase = isAvailableUsecase,
+        _openStoreListingUsecase = openStoreListingUsecase,
+        _requestReviewUsecase = requestReviewUsecase,
+        super(false);
 
   Future<bool> isAvailable() async {
     final isAvailable = await _isAvailableUsecase();
@@ -71,9 +71,9 @@ class InAppReviewStateNotifier extends SafeStateNotifier<bool> {
 
 final inAppReviewStateNotifierProvider =
     StateNotifierProvider<InAppReviewStateNotifier, bool>(
-      (ref) => InAppReviewStateNotifier(
-        isAvailableUsecase: ref.read(isAvailableUsecaseProvider),
-        openStoreListingUsecase: ref.read(openStoreListingUsecaseProvider),
-        requestReviewUsecase: ref.read(requestReviewUsecaseProvider),
-      ),
-    );
+  (ref) => InAppReviewStateNotifier(
+    isAvailableUsecase: ref.read(isAvailableUsecaseProvider),
+    openStoreListingUsecase: ref.read(openStoreListingUsecaseProvider),
+    requestReviewUsecase: ref.read(requestReviewUsecaseProvider),
+  ),
+);

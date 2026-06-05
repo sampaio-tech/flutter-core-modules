@@ -95,7 +95,7 @@ class DecimalTextInputFormatter extends TextInputFormatter {
     //         newValue.text.startsWith(oldValue.text);
     final bool isRemovedCharacter =
         oldValue.text.length - 1 == newValue.text.length &&
-        oldValue.text.startsWith(newValue.text);
+            oldValue.text.startsWith(newValue.text);
 
     // Apparently, Flutter has a bug where the framework calls
     // formatEditUpdate twice, or even four times, after a backspace press (see
@@ -203,9 +203,8 @@ class DecimalTextInputFormatter extends TextInputFormatter {
       _isNegative = false;
     }
 
-    final String newText = value
-        .toStringAsFixed(_decimalDigits)
-        .replaceAll(RegExp('[^0-9]'), '');
+    final String newText =
+        value.toStringAsFixed(_decimalDigits).replaceAll(RegExp('[^0-9]'), '');
     _formatter(newText);
     return _newString;
   }

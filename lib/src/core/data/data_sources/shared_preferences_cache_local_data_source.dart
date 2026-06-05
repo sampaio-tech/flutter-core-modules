@@ -29,12 +29,13 @@ class SharedPreferencesCacheLocalDataSource extends CacheLocalDataSource {
   Future<DateTime?> getSavedAt({
     required CacheKey key,
     required String path,
-  }) async => switch (_sharedPreferences.getString(
-    const JsonCacheKey().savedAt(path),
-  )) {
-    null => null,
-    final formattedString => DateTime.tryParse(formattedString),
-  };
+  }) async =>
+      switch (_sharedPreferences.getString(
+        const JsonCacheKey().savedAt(path),
+      )) {
+        null => null,
+        final formattedString => DateTime.tryParse(formattedString),
+      };
 
   @override
   Future<bool> setDownloadUrl({
@@ -66,7 +67,7 @@ class SharedPreferencesCacheLocalDataSource extends CacheLocalDataSource {
 
 final sharedPreferencesCacheLocalDataSourceProvider =
     Provider.autoDispose<SharedPreferencesCacheLocalDataSource>(
-      (ref) => SharedPreferencesCacheLocalDataSource(
-        sharedPreferences: ref.read(sharedPreferencesProvider),
-      ),
-    );
+  (ref) => SharedPreferencesCacheLocalDataSource(
+    sharedPreferences: ref.read(sharedPreferencesProvider),
+  ),
+);

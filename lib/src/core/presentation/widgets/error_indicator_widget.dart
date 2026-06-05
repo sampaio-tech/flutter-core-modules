@@ -24,65 +24,65 @@ class ErrorIndicatorWidget extends StatelessWidget {
     final theme = IosTheme.of(context);
     return switch (axis) {
       Axis.horizontal => CupertinoButtonWidget(
-        onPressed: retryCallback,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: Text(
+          onPressed: retryCallback,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  style: theme.typography.bodyRegular.copyWith(
+                    color: iconColorCallback(theme),
+                  ),
+                  overflow: TextOverflow.visible,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 6),
+              iconWidget ??
+                  IconWidget.transparentBackground(
+                    iconData: CupertinoIcons.exclamationmark_circle,
+                    iconColorCallback: iconColorCallback,
+                    iconSize: 18,
+                  ),
+            ],
+          ),
+        ),
+      Axis.vertical => CupertinoButtonWidget(
+          onPressed: retryCallback,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              iconWidget ??
+                  IconWidget.transparentBackground(
+                    iconData: CupertinoIcons.exclamationmark_circle,
+                    iconColorCallback: iconColorCallback,
+                    iconSize: 48,
+                  ),
+              const SizedBox(height: 8),
+              Text(
                 label,
-                style: theme.typography.bodyRegular.copyWith(
-                  color: iconColorCallback(theme),
+                style: theme.typography.title3Regular.copyWith(
+                  color: theme.defaultLabelColors.primary,
                 ),
                 overflow: TextOverflow.visible,
                 textAlign: TextAlign.center,
               ),
-            ),
-            const SizedBox(width: 6),
-            iconWidget ??
-                IconWidget.transparentBackground(
-                  iconData: CupertinoIcons.exclamationmark_circle,
-                  iconColorCallback: iconColorCallback,
-                  iconSize: 18,
+              const SizedBox(height: 8),
+              if (retryCallback != null)
+                IgnorePointer(
+                  child: ButtonWidget.label(
+                    size: const SmallButtonSize(),
+                    color: const BlueButtonColor(),
+                    label: retryLabel,
+                    onPressed: retryCallback,
+                  ),
                 ),
-          ],
+            ],
+          ),
         ),
-      ),
-      Axis.vertical => CupertinoButtonWidget(
-        onPressed: retryCallback,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            iconWidget ??
-                IconWidget.transparentBackground(
-                  iconData: CupertinoIcons.exclamationmark_circle,
-                  iconColorCallback: iconColorCallback,
-                  iconSize: 48,
-                ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: theme.typography.title3Regular.copyWith(
-                color: theme.defaultLabelColors.primary,
-              ),
-              overflow: TextOverflow.visible,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            if (retryCallback != null)
-              IgnorePointer(
-                child: ButtonWidget.label(
-                  size: const SmallButtonSize(),
-                  color: const BlueButtonColor(),
-                  label: retryLabel,
-                  onPressed: retryCallback,
-                ),
-              ),
-          ],
-        ),
-      ),
     };
   }
 }
@@ -108,7 +108,6 @@ class CheckInternetErrorIndicatorWidget extends StatelessWidget {
     return ErrorIndicatorWidget(
       retryCallback: retryCallback,
       retryLabel: retryLabel,
-
       label: label,
       iconWidget: iconWidget,
       axis: axis,

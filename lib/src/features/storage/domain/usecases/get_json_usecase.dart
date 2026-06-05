@@ -9,17 +9,18 @@ class GetJsonUsecase {
   final StorageRepository _repository;
 
   const GetJsonUsecase({required StorageRepository repository})
-    : _repository = repository;
+      : _repository = repository;
 
   Future<Either<StorageFailure, dynamic>> call({
     required String path,
     required DateTime? invalidateCacheBefore,
     required Duration? invalidateCacheDuration,
-  }) => _repository.getJson(
-    path: path,
-    invalidateCacheBefore: invalidateCacheBefore,
-    invalidateCacheDuration: invalidateCacheDuration,
-  );
+  }) =>
+      _repository.getJson(
+        path: path,
+        invalidateCacheBefore: invalidateCacheBefore,
+        invalidateCacheDuration: invalidateCacheDuration,
+      );
 }
 
 final getJsonUsecaseProvider = Provider.autoDispose<GetJsonUsecase>(
