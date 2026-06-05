@@ -42,7 +42,6 @@ export './src/features/analytics/domain/repositories/analytics_repository.dart';
 export './src/features/analytics/domain/usecases/track_event_usecase.dart';
 export './src/features/analytics/presentation/setup/amplitude/amplitude.dart';
 export './src/features/analytics/presentation/setup/firebase_analytics/firebase_analytics.dart';
-export './src/features/analytics/presentation/setup/mixpanel/mixpanel.dart';
 export './src/features/analytics/presentation/setup/posthog/posthog.dart';
 export './src/features/analytics/presentation/setup/remote_config/remote_config.dart';
 export './src/features/analytics/presentation/setup/statsig/statsig.dart';
