@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:ios_design_system/ios_design_system.dart';
 import 'package:webview_all/webview_all.dart';
+
+import '../hooks/web_view_controller.dart';
 
 class WebViewModalSheetWidget extends HookWidget {
   final String url;
@@ -33,6 +36,25 @@ class WebViewModalSheetWidget extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(child: Webview(url: url));
+    final loadProgress = useState(0);
+    final controller = useWebViewController(
+      url: url,
+      navigationDelegate: NavigationDelegate(
+        onProgress: (progress) => loadProgress.value = progress,
+        onPageFinished: (_) => loadProgress.value = 100,
+        onWebResourceError: (error) =>
+            debugPrint('Error ${error.errorCode}: ${error.description}'),
+      ),
+    );
+
+    return Expanded(
+      child: Stack(
+        children: [
+          WebViewWidget(controller: controller),
+          if (!kIsWeb && loadProgress.value < 100)
+            LinearProgressIndicator(value: loadProgress.value / 100),
+        ],
+      ),
+    );
   }
 }
