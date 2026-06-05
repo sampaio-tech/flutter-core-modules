@@ -15,6 +15,7 @@ export './src/core/presentation/hooks/debounce.dart';
 export './src/core/presentation/hooks/fixed_extent_scroll_controller.dart';
 export './src/core/presentation/hooks/interval.dart';
 export './src/core/presentation/hooks/safe_effect.dart';
+export './src/core/presentation/hooks/web_view_controller.dart';
 export './src/core/presentation/notifiers/cache_bool_state_notifier.dart';
 export './src/core/presentation/notifiers/get_state_notifier.dart';
 export './src/core/presentation/notifiers/safe_state_notifier.dart';
