@@ -26,7 +26,9 @@ dependencies:
   in_app_review: ^2.0.12
   purchases_ui_flutter: ^10.4.2
   ios_design_system:
-    path: ../ios_design_system
+    git:
+      url: https://github.com/sampaio-tech/iOS-design-system.git
+      ref: main
   url_launcher: ^6.3.2
   path_provider: ^2.1.6
   wakelock_plus: ^1.6.1
