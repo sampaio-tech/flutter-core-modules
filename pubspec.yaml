@@ -24,13 +24,13 @@ dependencies:
   collection: ^1.19.1
   fluttertoast: ^9.1.0
   in_app_review: ^2.0.12
-  purchases_ui_flutter: ^10.3.0
+  purchases_ui_flutter: ^10.4.2
   ios_design_system:
     path: ../ios_design_system
   url_launcher: ^6.3.2
   path_provider: ^2.1.6
   wakelock_plus: ^1.6.1
-  purchases_flutter: ^10.3.0
+  purchases_flutter: ^10.4.2
   firebase_analytics: ^12.4.3
   firebase_core: ^4.11.0
   firebase_auth: ^6.5.4
