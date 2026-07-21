@@ -80,6 +80,7 @@ export './src/features/settings/presentation/notifiers/haptic_feedback_state_not
 export './src/features/settings/presentation/notifiers/wakelock_state_notifier.dart';
 export './src/features/settings/presentation/widgets/cache_bool_row_widget.dart';
 export './src/features/settings/presentation/widgets/switch_row_widget.dart';
+export './src/features/settings/presentation/widgets/theme_picker_row_widget.dart';
 export './src/features/settings/presentation/widgets/theme_row_widget.dart';
 export './src/features/storage/data/data_sources/firebase_storage_remote_data_source.dart';
 export './src/features/storage/data/repositories/firebase_storage_repository.dart';
