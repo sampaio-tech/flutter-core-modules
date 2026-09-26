@@ -51,7 +51,7 @@ class ShellRouteWidget extends HookConsumerWidget {
             controller: controller,
             tabBar: CupertinoTabBar(
               activeColor: activeColor?.call(context) ??
-                  theme.acessibleColors.systemGreen,
+                  theme.acessibleColors.systemBlue,
               items: tabs
                   .map(
                     (navigationTab) => BottomNavigationBarItem(
