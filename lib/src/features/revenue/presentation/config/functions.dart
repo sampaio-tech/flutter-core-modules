@@ -13,6 +13,7 @@ Future<PaywallResult?> presentPaywallForwarded({
   required bool enable,
   required bool featureLocked,
   required void Function()? onTap,
+  Offering? offering,
   void Function()? onHasActiveSubscriptionCallback,
   void Function()? onPresentedPaywallCallback,
   void Function(PaywallResult)? onSyncPurchasesCallback,
@@ -29,6 +30,7 @@ Future<PaywallResult?> presentPaywallForwarded({
   return providerContainer
       .read(customerInfoStateNotifierProvider.notifier)
       .presentPaywall(
+    offering: offering,
     onHasActiveSubscriptionCallback: () {
       OnHasActiveSubscriptionCallback(
         event: event,

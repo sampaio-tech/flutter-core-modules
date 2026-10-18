@@ -39,6 +39,7 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
         super(null);
 
   Future<PaywallResult?> presentPaywall({
+    Offering? offering,
     void Function()? onHasActiveSubscriptionCallback,
     void Function()? onPresentedPaywallCallback,
     void Function(PaywallResult value)? onSyncPurchasesCallback,
@@ -51,7 +52,7 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
       return null;
     }
     onPresentedPaywallCallback?.call();
-    return RevenueCatUI.presentPaywall().then((value) async {
+    return RevenueCatUI.presentPaywall(offering: offering).then((value) async {
       if (value == PaywallResult.purchased || value == PaywallResult.restored) {
         onSyncPurchasesCallback?.call(value);
         await syncPurchases();
