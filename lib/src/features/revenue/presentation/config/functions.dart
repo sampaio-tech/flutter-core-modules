@@ -14,6 +14,7 @@ Future<PaywallResult?> presentPaywallForwarded({
   required bool featureLocked,
   required void Function()? onTap,
   Offering? offering,
+  String? requiredEntitlementIdentifier,
   void Function()? onHasActiveSubscriptionCallback,
   void Function()? onPresentedPaywallCallback,
   void Function(PaywallResult)? onSyncPurchasesCallback,
@@ -31,6 +32,7 @@ Future<PaywallResult?> presentPaywallForwarded({
       .read(customerInfoStateNotifierProvider.notifier)
       .presentPaywall(
     offering: offering,
+    requiredEntitlementIdentifier: requiredEntitlementIdentifier,
     onHasActiveSubscriptionCallback: () {
       OnHasActiveSubscriptionCallback(
         event: event,

@@ -40,6 +40,7 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
 
   Future<PaywallResult?> presentPaywall({
     Offering? offering,
+    String? requiredEntitlementIdentifier,
     void Function()? onHasActiveSubscriptionCallback,
     void Function()? onPresentedPaywallCallback,
     void Function(PaywallResult value)? onSyncPurchasesCallback,
@@ -52,14 +53,26 @@ class CustomerInfoStateNotifier extends SafeStateNotifier<CustomerInfo?> {
       return null;
     }
     onPresentedPaywallCallback?.call();
-    return RevenueCatUI.presentPaywall(offering: offering).then((value) async {
-      if (value == PaywallResult.purchased || value == PaywallResult.restored) {
-        onSyncPurchasesCallback?.call(value);
-        await syncPurchases();
-      }
-      onPresentPaywallResultCallback?.call(value);
-      return value;
-    });
+    final PaywallResult result;
+    if (requiredEntitlementIdentifier != null) {
+      final ifNeededResult = await RevenueCatUI.presentPaywallIfNeeded(
+        requiredEntitlementIdentifier,
+        offering: offering,
+      );
+      result = switch (ifNeededResult) {
+        PaywallResult.notPresented =>
+          await RevenueCatUI.presentPaywall(offering: offering),
+        _ => ifNeededResult,
+      };
+    } else {
+      result = await RevenueCatUI.presentPaywall(offering: offering);
+    }
+    if (result == PaywallResult.purchased || result == PaywallResult.restored) {
+      onSyncPurchasesCallback?.call(result);
+      await syncPurchases();
+    }
+    onPresentPaywallResultCallback?.call(result);
+    return result;
   }
 
   Future<CustomerInfo?> get({bool invalidateCache = false}) async {
