@@ -4,10 +4,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 /// Run effect after first frame
 void useSafeEffect(Dispose? Function() effect, [List<Object?>? keys]) {
   useEffect(() {
+    var mounted = true;
     Dispose? dispose;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      dispose = effect();
+      if (mounted) {
+        dispose = effect();
+      }
     });
-    return dispose;
+    return () {
+      mounted = false;
+      dispose?.call();
+    };
   }, keys);
 }
